@@ -17,7 +17,7 @@ if "app.db.database" in sys.modules:
 
 from app.core.llm_engine import get_parsed_content_from_text, get_parsed_content_from_image, configure_gemini
 from app.ui.result_view import render_parsed_result
-from app.db.database import init_db, get_all_words, delete_word, add_passage, get_all_passages, get_passage_by_id, get_dashboard_stats, get_recent_pronunciation_scores, get_setting, set_setting
+from app.db.database import init_db, get_all_words, delete_word, add_passage, get_all_passages, get_passage_by_id, get_dashboard_stats, get_recent_pronunciation_scores, get_setting, set_setting, register_user, authenticate_user
 from app.utils.qr import get_local_ip, generate_qr_code
 
 load_dotenv()
@@ -90,24 +90,44 @@ def render_intro_page():
         
     with col2:
         with st.container(border=True):
-            st.subheader("🔑 시작하기 (로그인)")
-            st.write("서비스를 이용하려면 로그인해주세요.")
-            username = st.text_input("아이디", placeholder="예: admin")
-            password = st.text_input("비밀번호", type="password", placeholder="예: 1234")
+            tab_login, tab_register = st.tabs(["🔑 로그인", "📝 회원가입"])
             
-            if st.button("🚀 로그인", use_container_width=True):
-                if username == "admin" and password == "1234":
-                    st.session_state["logged_in"] = True
-                    st.toast("로그인 성공!", icon="✅")
-                    st.rerun()
-                else:
-                    st.error("아이디 또는 비밀번호가 올바르지 않습니다. (임시 계정: admin / 1234)")
-            
-            st.markdown("<br><p style='text-align: center; color: gray; font-size: 0.9em;'>아직 계정이 없으신가요? <br><b><a href='#'>베타 테스터 신청하기</a></b></p>", unsafe_allow_html=True)
+            with tab_login:
+                st.subheader("로그인")
+                login_user = st.text_input("아이디", key="login_user")
+                login_pw = st.text_input("비밀번호", type="password", key="login_pw")
+                if st.button("🚀 로그인", use_container_width=True):
+                    user_id = authenticate_user(login_user, login_pw)
+                    if user_id:
+                        st.session_state["logged_in"] = True
+                        st.session_state["user_id"] = user_id
+                        st.session_state["username"] = login_user
+                        st.toast("로그인 성공!", icon="✅")
+                        st.rerun()
+                    else:
+                        st.error("아이디 또는 비밀번호가 올바르지 않습니다.")
+                        
+            with tab_register:
+                st.subheader("회원가입")
+                reg_user = st.text_input("새 아이디", key="reg_user")
+                reg_pw = st.text_input("새 비밀번호", type="password", key="reg_pw")
+                reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm")
+                
+                if st.button("✨ 가입하기", use_container_width=True):
+                    if not reg_user or not reg_pw:
+                        st.error("아이디와 비밀번호를 모두 입력해주세요.")
+                    elif reg_pw != reg_pw_confirm:
+                        st.error("비밀번호가 일치하지 않습니다.")
+                    else:
+                        new_user_id = register_user(reg_user, reg_pw)
+                        if new_user_id:
+                            st.success("회원가입이 완료되었습니다! 로그인 탭에서 로그인해주세요.")
+                        else:
+                            st.error("이미 존재하는 아이디거나 오류가 발생했습니다.")
 
 def render_main_app():
     def load_passage_callback(passage_id, title):
-        loaded_json = get_passage_by_id(passage_id)
+        loaded_json = get_passage_by_id(st.session_state["user_id"], passage_id)
         if loaded_json:
             st.session_state["parsed_data"] = loaded_json
             st.session_state["switch_to_tab1"] = True
@@ -146,18 +166,18 @@ def render_main_app():
             with st.expander("⚙️ 학습 설정", expanded=False):
                 # DB에서 초기값 불러오기
                 if "student_level" not in st.session_state:
-                    st.session_state["student_level"] = get_setting("student_level", "중학교 1학년")
+                    st.session_state["student_level"] = get_setting(st.session_state["user_id"], "student_level", "중학교 1학년")
                 if "target_language" not in st.session_state:
-                    st.session_state["target_language"] = get_setting("target_language", "한국어")
+                    st.session_state["target_language"] = get_setting(st.session_state["user_id"], "target_language", "한국어")
                 if "tts_gender" not in st.session_state:
-                    st.session_state["tts_gender"] = get_setting("tts_gender", "male")
+                    st.session_state["tts_gender"] = get_setting(st.session_state["user_id"], "tts_gender", "male")
                 if "extract_original" not in st.session_state:
-                    val = get_setting("extract_original", "True")
+                    val = get_setting(st.session_state["user_id"], "extract_original", "True")
                     st.session_state["extract_original"] = (val == "True")
                 if "translation_style" not in st.session_state:
-                    st.session_state["translation_style"] = get_setting("translation_style", "자연스러운 번역 (의역)")
+                    st.session_state["translation_style"] = get_setting(st.session_state["user_id"], "translation_style", "자연스러운 번역 (의역)")
                 if "translation_tone" not in st.session_state:
-                    st.session_state["translation_tone"] = get_setting("translation_tone", "경어체 (~해요)")
+                    st.session_state["translation_tone"] = get_setting(st.session_state["user_id"], "translation_tone", "경어체 (~해요)")
 
                 levels = [
                     "초등 1학년", "초등 2학년", "초등 3학년", "초등 4학년", "초등 5학년", "초등 6학년",
@@ -182,14 +202,8 @@ def render_main_app():
                     curr_gender_idx = 0 if st.session_state["tts_gender"] == "male" else 1
                     tts_gender_kr = st.radio("🗣️ 성우 선택", ["남성", "여성"], horizontal=True, index=curr_gender_idx)
                     new_gender = "male" if tts_gender_kr == "남성" else "female"
-                    if new_gender != st.session_state["tts_gender"]:
-                        st.session_state["tts_gender"] = new_gender
-                        set_setting("tts_gender", new_gender)
                 with col_s2:
                     new_extract = st.toggle("원문 연습문제 추출", value=st.session_state["extract_original"])
-                    if new_extract != st.session_state["extract_original"]:
-                        st.session_state["extract_original"] = new_extract
-                        set_setting("extract_original", "True" if new_extract else "False")
                         
                 st.markdown("---")
                 col_t1, col_t2 = st.columns(2)
@@ -197,77 +211,61 @@ def render_main_app():
                     style_opts = ["자연스러운 번역 (의역)", "직역 (문법 구조 파악용)"]
                     curr_style_idx = style_opts.index(st.session_state["translation_style"]) if st.session_state["translation_style"] in style_opts else 0
                     new_style = st.selectbox("🔤 번역 스타일", style_opts, index=curr_style_idx)
-                    if new_style != st.session_state["translation_style"]:
-                        st.session_state["translation_style"] = new_style
-                        set_setting("translation_style", new_style)
                 with col_t2:
                     tone_opts = ["경어체 (~해요)", "평어체 (~한다)"]
                     curr_tone_idx = tone_opts.index(st.session_state["translation_tone"]) if st.session_state["translation_tone"] in tone_opts else 0
                     new_tone = st.selectbox("💬 번역 문체", tone_opts, index=curr_tone_idx)
-                    if new_tone != st.session_state["translation_tone"]:
-                        st.session_state["translation_tone"] = new_tone
-                        set_setting("translation_tone", new_tone)
+                
+                if st.button("설정 저장"):
+                    set_setting(st.session_state["user_id"], "student_level", new_student_level)
+                    set_setting(st.session_state["user_id"], "target_language", new_target_language)
+                    set_setting(st.session_state["user_id"], "tts_gender", new_gender)
+                    set_setting(st.session_state["user_id"], "extract_original", "True" if new_extract else "False")
+                    set_setting(st.session_state["user_id"], "translation_style", new_style)
+                    set_setting(st.session_state["user_id"], "translation_tone", new_tone)
+                    st.session_state["student_level"] = new_student_level
+                    st.session_state["target_language"] = new_target_language
+                    st.session_state["tts_gender"] = new_gender
+                    st.session_state["extract_original"] = new_extract
+                    st.session_state["translation_style"] = new_style
+                    st.session_state["translation_tone"] = new_tone
+                    st.success("설정이 저장되었습니다!")
 
             input_type = st.radio("입력 방식 선택", ["🖼️ 갤러리/스크린샷 업로드", "📸 카메라 촬영", "📝 텍스트 직접 입력"], horizontal=True, label_visibility="collapsed")
 
-            # 각 라디오 버튼 옵션에 풍선 도움말(Tooltip)을 추가하기 위한 JS 주입
-            st.components.v1.html("""
-            <script>
-                const radioGroups = window.parent.document.querySelectorAll('div[data-testid="stRadio"] div[role="radiogroup"]');
-                radioGroups.forEach(group => {
-                    const labels = group.querySelectorAll('label');
-                    if (labels.length === 3) {
-                        labels[0].title = "기존 사진이나 캡처한 이미지를 불러와 분석합니다.";
-                        labels[1].title = "웹캠이나 모바일 카메라로 교재를 직접 촬영합니다.";
-                        labels[2].title = "외국어 원문을 직접 복사해서 붙여넣습니다.";
-                    }
-                });
-            </script>
-            """, height=0)
-
             if input_type == "🖼️ 갤러리/스크린샷 업로드":
-                uploaded_image = st.file_uploader("스크린샷 또는 사진 파일 업로드 (JPG, PNG)", type=["jpg", "jpeg", "png"], help="💡 태블릿 팁: 태블릿의 캡처 기능으로 화면을 스크린샷한 뒤, 해당 이미지를 불러오세요.")
+                uploaded_image = st.file_uploader("스크린샷 또는 사진 파일 업로드 (JPG, PNG)", type=["jpg", "jpeg", "png"])
                 if uploaded_image:
                     img = PIL.Image.open(uploaded_image)
-                    st.write("👉 마우스로 모르는 문장이나 문제 영역을 박스로 드래그하세요 (전체 분석 시 박스를 최대로 키우세요):")
-                    # 텍스트 입력창처럼 박스 테두리를 주어 가로폭을 최대한 활용하도록 컨테이너 래핑
-                    with st.container(border=True):
-                        cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
-
-                    if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True, help="클릭하면 선택된 영역에 대해 AI 분석이 시작됩니다."):
-                        with st.spinner(f"AI 선생님이 이미지를 분석하고 {st.session_state['target_language']}로 변환하고 있습니다..."):
+                    cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
+                    if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True):
+                        with st.spinner("AI 분석 중..."):
                             parsed = get_parsed_content_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
                             st.session_state["parsed_data"] = parsed
                             if parsed and "error" not in parsed:
-                                add_passage(parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                                add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
 
             elif input_type == "📸 카메라 촬영":
                 camera_image = st.camera_input("카메라로 교재 촬영")
                 if camera_image:
                     img = PIL.Image.open(camera_image)
-                    st.write("👉 분석할 영역을 박스로 지정하세요:")
-                    with st.container(border=True):
-                        cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
-
-                    if st.button("🚀 촬영 영역 분석 시작", key="btn_cam", use_container_width=True, help="클릭하면 촬영된 영역에 대해 AI 분석이 시작됩니다."):
-                        with st.spinner(f"AI 선생님이 이미지를 분석하고 {st.session_state['target_language']}로 변환하고 있습니다..."):
+                    cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
+                    if st.button("🚀 촬영 영역 분석 시작", key="btn_cam", use_container_width=True):
+                        with st.spinner("AI 분석 중..."):
                             parsed = get_parsed_content_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
                             st.session_state["parsed_data"] = parsed
                             if parsed and "error" not in parsed:
-                                add_passage(parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                                add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
 
             else:
-                input_text = st.text_area("외국어 텍스트 입력", height=200, placeholder="외국어 원문을 여기에 붙여넣으세요...")
-                if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True, help="클릭하면 입력된 텍스트에 대해 AI 분석이 시작됩니다."):
+                input_text = st.text_area("외국어 텍스트 입력", height=200)
+                if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True):
                     if input_text.strip():
-                        with st.spinner(f"AI 선생님이 텍스트를 분석하고 {st.session_state['target_language']}로 변환하고 있습니다..."):
+                        with st.spinner("AI 분석 중..."):
                             parsed = get_parsed_content_from_text(input_text, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
                             st.session_state["parsed_data"] = parsed
                             if parsed and "error" not in parsed:
-                                add_passage(parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
-                    else:
-                        st.error("텍스트를 입력해주세요.")
-
+                                add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
 
         else:
             col_h1, col_h2 = st.columns([1, 2.5])
@@ -278,22 +276,15 @@ def render_main_app():
                     st.session_state["parsed_data"] = None
                     st.rerun()
 
-            # 분석 결과 렌더링
             render_parsed_result(st.session_state["parsed_data"])
 
     with tab_vocab:
         st.header("📚 나만의 단어장")
-        st.write("학습 중 저장한 핵심 어휘들을 복습해 보세요!")
-
-        words = get_all_words()
+        words = get_all_words(st.session_state["user_id"])
         if not words:
-            st.info("아직 저장된 단어가 없습니다. 학습 화면에서 모르는 단어를 추가해보세요!")
+            st.info("아직 저장된 단어가 없습니다.")
         else:
-            st.success(f"총 **{len(words)}**개의 단어가 저장되어 있습니다.")
-
-            # DataFrame 형태로 예쁘게 렌더링하기 위해 컨테이너 사용
             from app.core.tts_engine import generate_audio_sync, get_voice_for_language
-
             for w in words:
                 with st.container(border=True):
                     col1, col2, col3, col4 = st.columns([2, 4, 1, 1])
@@ -301,35 +292,25 @@ def render_main_app():
                         st.markdown(f"### {w['word']}")
                     with col2:
                         st.markdown(f"**뜻:** {w['meaning']}")
-                        st.caption(f"저장일: {w['created_at']}")
-
-                        # 재생 상태를 세션으로 관리
                         if st.session_state.get(f"play_vocab_{w['id']}"):
-                            source_lang = "en"
-                            if st.session_state.get("parsed_data"):
-                                source_lang = st.session_state["parsed_data"].get("source_language", "en")
-                            voice = get_voice_for_language(source_lang, st.session_state.get("tts_gender", "male"))
-
+                            voice = get_voice_for_language(st.session_state.get("target_language", "en"), st.session_state.get("tts_gender", "male"))
                             with st.spinner("오디오 생성 중..."):
                                 audio_bytes = generate_audio_sync(w['word'], voice)
                             st.audio(audio_bytes, format="audio/mp3", autoplay=True)
-                            st.session_state[f"play_vocab_{w['id']}"] = False # 1회 재생 후 상태 초기화
+                            st.session_state[f"play_vocab_{w['id']}"] = False
 
                     with col3:
                         if st.button("🔊 발음", key=f"listen_vocab_{w['id']}"):
                             st.session_state[f"play_vocab_{w['id']}"] = True
                             st.rerun()
                     with col4:
-                        if st.button("🗑️ 삭제", key=f"del_vocab_{w['id']}"):
-                            delete_word(w['id'])
+                        if st.button("🗑️ 삭제", key=f"del_{w['id']}", use_container_width=True):
+                            delete_word(st.session_state["user_id"], w['id'])
                             st.rerun()
 
     with tab_dashboard:
         st.header("📊 학습 대시보드 & 서재")
-        st.write("지금까지의 학습 기록을 확인하고 이전 지문을 다시 불러와 복습해 보세요!")
-
-        # 상단 요약 통계
-        stats = get_dashboard_stats()
+        stats = get_dashboard_stats(st.session_state["user_id"])
         col_d1, col_d2, col_d3 = st.columns(3)
         with col_d1:
             st.metric(label="총 분석 지문 수", value=f"{stats['total_passages']} 개")
@@ -339,26 +320,23 @@ def render_main_app():
             st.metric(label="발음 점수 평균", value=f"{stats['avg_score']} 점")
 
         st.markdown("---")
+        db_col1, db_col2 = st.columns([1, 1], gap="large")
 
-        # 2단 구성: 통계 그래프 / 서재 리스트
-        col_chart, col_library = st.columns([1, 1], gap="large")
-
-        with col_chart:
-            st.subheader("📈 최근 발음 실력 향상도")
-            scores = get_recent_pronunciation_scores()
+        with db_col1:
+            st.markdown("#### 🎯 최근 발음 점수 추이")
+            scores = get_recent_pronunciation_scores(st.session_state["user_id"])
             if scores:
                 import pandas as pd
                 df_scores = pd.DataFrame(scores)
-                # created_at에서 시간 부분을 제외하고 날짜만 표시하거나 인덱스로 표시
                 st.line_chart(df_scores, y="score")
             else:
                 st.info("아직 발음 연습 기록이 없습니다.")
 
-        with col_library:
-            st.subheader("📚 나의 학습 서재")
-            passages = get_all_passages()
+        with db_col2:
+            st.markdown("#### 📚 내 서재 (과거 학습 기록)")
+            passages = get_all_passages(st.session_state["user_id"])
             if not passages:
-                st.info("저장된 지문이 없습니다. 학습 탭에서 텍스트를 분석해 보세요.")
+                st.info("저장된 지문이 없습니다.")
             else:
                 for p in passages:
                     with st.container(border=True):
@@ -378,9 +356,12 @@ if not st.session_state["logged_in"]:
 else:
     with st.sidebar:
         st.markdown("### 👤 사용자 정보")
-        st.write("환영합니다, **admin**님!")
+        username = st.session_state.get("username", "Unknown")
+        st.write(f"환영합니다, **{username}**님!")
         if st.button("로그아웃", use_container_width=True):
             st.session_state["logged_in"] = False
+            st.session_state.pop("user_id", None)
+            st.session_state.pop("username", None)
             st.rerun()
             
         st.markdown("---")

@@ -3,6 +3,16 @@ import json
 from google import genai
 from google.genai import types
 from typing import Optional, Dict, Any
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_result
+
+def is_error_result(result):
+    if not isinstance(result, dict):
+        return False
+    if "error" in result:
+        return True
+    if "transcription" in result and result.get("score") == 0 and "오류가 발생했습니다" in result.get("feedback", ""):
+        return True
+    return False
 
 # 설정: 환경변수에서 API 키 로드
 client = None
@@ -75,6 +85,7 @@ RESPONSE_SCHEMA = {
     "required": ["source_language", "target_language", "title", "type", "contents", "vocabulary", "original_questions", "tutor_feedback"]
 }
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
 def get_parsed_content_from_text(text: str, extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
     """텍스트를 입력받아 파싱된 JSON 객체를 반환합니다."""
     
@@ -132,6 +143,7 @@ def get_parsed_content_from_text(text: str, extract_original_questions: bool = T
     except Exception as e:
         return {"error": str(e), "raw_response": getattr(response, 'text', '') if 'response' in locals() else ''}
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
 def get_parsed_content_from_image(image_part, extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
     """이미지 객체를 입력받아 파싱된 JSON 객체를 반환합니다."""
     
@@ -189,6 +201,7 @@ def get_parsed_content_from_image(image_part, extract_original_questions: bool =
     except Exception as e:
         return {"error": str(e), "raw_response": getattr(response, 'text', '') if 'response' in locals() else ''}
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
 def get_tutor_chat_response(chat_history: list, parsed_data: Dict[str, Any], mode: str = "qa", student_level: str = "중학교 1학년") -> str:
     """사용자의 질문에 대해 본문 문맥(parsed_data)을 기반으로 AI 튜터가 답변을 생성합니다."""
     
@@ -286,6 +299,7 @@ def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/wav") -> str:
     except Exception as e:
         return f"[음성 인식 실패: {str(e)}]"
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
 def evaluate_pronunciation(audio_bytes: bytes, target_sentence: str, target_language: str, mime_type: str = "audio/wav") -> Dict[str, Any]:
     """사용자의 음성을 평가하여 발음 정확도와 피드백을 반환합니다."""
     if client is None:

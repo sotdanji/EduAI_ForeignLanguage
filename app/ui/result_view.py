@@ -611,7 +611,7 @@ def render_parsed_result(data: Dict[str, Any]):
                                         res = evaluate_pronunciation(audio_bytes, target_text, source_lang)
                                         st.session_state[f"ahash_{skey}"] = ahash
                                         st.session_state[skey] = res
-                                        add_pronunciation_score(target_text, res.get('score', 0))
+                                        add_pronunciation_score(st.session_state["user_id"], target_text, res.get('score', 0))
                                     else:
                                         res = st.session_state[skey]
                                         
@@ -661,7 +661,7 @@ def render_parsed_result(data: Dict[str, Any]):
                                         res = evaluate_pronunciation(audio_bytes, target_text, source_lang)
                                         st.session_state[f"ahash_{skey}"] = ahash
                                         st.session_state[skey] = res
-                                        add_pronunciation_score(target_text, res.get('score', 0))
+                                        add_pronunciation_score(st.session_state["user_id"], target_text, res.get('score', 0))
                                     else:
                                         res = st.session_state[skey]
                                         
@@ -723,7 +723,7 @@ def render_parsed_result(data: Dict[str, Any]):
                                 res = evaluate_pronunciation(audio_bytes, target_text, source_lang)
                                 st.session_state[f"ahash_{skey}"] = ahash
                                 st.session_state[skey] = res
-                                add_pronunciation_score(target_text, res.get('score', 0))
+                                add_pronunciation_score(st.session_state["user_id"], target_text, res.get('score', 0))
                             else:
                                 res = st.session_state[skey]
                                 
@@ -841,7 +841,7 @@ def render_parsed_result(data: Dict[str, Any]):
                             res = evaluate_pronunciation(audio_bytes, target_text, source_lang)
                             st.session_state[f"ahash_{skey_res}"] = ahash
                             st.session_state[skey_res] = res
-                            add_pronunciation_score(target_text, res.get('score', 0))
+                            add_pronunciation_score(st.session_state["user_id"], target_text, res.get('score', 0))
                         else:
                             res = st.session_state[skey_res]
                             
@@ -869,7 +869,7 @@ def render_parsed_result(data: Dict[str, Any]):
                 st.markdown(f"- **{word}**: {meaning}")
             with col_v2:
                 if st.button("➕ 단어장에 저장", key=f"save_vocab_{i}_{word}"):
-                    success = add_word(word, meaning)
+                    success = add_word(st.session_state["user_id"], word, meaning)
                     if success:
                         st.toast(f"'{word}' 단어장에 저장 완료! 🎉")
                     else:

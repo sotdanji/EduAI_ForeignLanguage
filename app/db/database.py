@@ -26,9 +26,7 @@ def execute_query(query: str, params: tuple = (), commit: bool = False, fetch: s
     SQLite용 쿼리(?)를 받아서 Postgres(%s) 환경에서도 동작하게 변환합니다.
     """
     if DB_TYPE == "postgres":
-        # 파라미터 바인딩 변환
         query = query.replace("?", "%s")
-        # 데이터 타입 변환
         query = query.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
         query = query.replace("DATETIME", "TIMESTAMP")
 
@@ -36,7 +34,6 @@ def execute_query(query: str, params: tuple = (), commit: bool = False, fetch: s
     cursor = conn.cursor()
     
     try:
-        # Postgres에서 lastrowid를 얻으려면 RETURNING id 필요
         if fetch == "lastrowid" and DB_TYPE == "postgres":
             if "RETURNING id" not in query:
                 query += " RETURNING id"
@@ -68,19 +65,29 @@ def execute_query(query: str, params: tuple = (), commit: bool = False, fetch: s
 def init_db():
     queries = [
         '''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            created_at DATETIME NOT NULL
+        )
+        ''',
+        '''
         CREATE TABLE IF NOT EXISTS vocabularies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             word TEXT NOT NULL,
             meaning TEXT NOT NULL,
             created_at DATETIME NOT NULL
         )
         ''',
         '''
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_word ON vocabularies(word)
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_user_word ON vocabularies(user_id, word)
         ''',
         '''
         CREATE TABLE IF NOT EXISTS passages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             title TEXT,
             type TEXT,
             source_language TEXT,
@@ -92,6 +99,7 @@ def init_db():
         '''
         CREATE TABLE IF NOT EXISTS pronunciation_scores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             target_sentence TEXT,
             score INTEGER,
             created_at DATETIME NOT NULL
@@ -99,68 +107,92 @@ def init_db():
         ''',
         '''
         CREATE TABLE IF NOT EXISTS user_settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
+            user_id INTEGER NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY (user_id, key)
         )
         '''
     ]
     for q in queries:
         execute_query(q, commit=True)
 
-def add_word(word: str, meaning: str) -> bool:
+# --- 사용자 관리 ---
+def register_user(username: str, password: str) -> int:
+    """회원가입. 실패 시 None 또는 Exception"""
+    try:
+        user_id = execute_query(
+            "INSERT INTO users (username, password, created_at) VALUES (?, ?, ?)",
+            (username, password, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+            commit=True, fetch="lastrowid"
+        )
+        return user_id
+    except Exception as e:
+        return None
+
+def authenticate_user(username: str, password: str) -> int:
+    """로그인 검증. 성공 시 user_id 반환, 실패 시 None 반환"""
+    row = execute_query("SELECT id FROM users WHERE username = ? AND password = ?", (username, password), fetch="one")
+    if row and 'id' in row:
+        return row['id']
+    return None
+
+# --- 단어장 관리 ---
+def add_word(user_id: int, word: str, meaning: str) -> bool:
     try:
         execute_query(
-            "INSERT INTO vocabularies (word, meaning, created_at) VALUES (?, ?, ?)",
-            (word, meaning, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+            "INSERT INTO vocabularies (user_id, word, meaning, created_at) VALUES (?, ?, ?, ?)",
+            (user_id, word, meaning, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
             commit=True
         )
         return True
     except Exception as e:
-        # sqlite3.IntegrityError or psycopg2.errors.UniqueViolation
         return False
 
-def get_all_words():
-    return execute_query("SELECT * FROM vocabularies ORDER BY created_at DESC", fetch="all")
+def get_all_words(user_id: int):
+    return execute_query("SELECT * FROM vocabularies WHERE user_id = ? ORDER BY created_at DESC", (user_id,), fetch="all")
 
-def delete_word(vocab_id: int):
-    execute_query("DELETE FROM vocabularies WHERE id = ?", (vocab_id,), commit=True)
+def delete_word(user_id: int, vocab_id: int):
+    execute_query("DELETE FROM vocabularies WHERE id = ? AND user_id = ?", (vocab_id, user_id), commit=True)
 
-def add_passage(title: str, p_type: str, source_lang: str, target_lang: str, raw_json: dict) -> int:
+# --- 지문(서재) 관리 ---
+def add_passage(user_id: int, title: str, p_type: str, source_lang: str, target_lang: str, raw_json: dict) -> int:
     return execute_query(
-        "INSERT INTO passages (title, type, source_language, target_language, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (title, p_type, source_lang, target_lang, json.dumps(raw_json, ensure_ascii=False), datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-        commit=True,
-        fetch="lastrowid"
+        "INSERT INTO passages (user_id, title, type, source_language, target_language, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (user_id, title, p_type, source_lang, target_lang, json.dumps(raw_json, ensure_ascii=False), datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        commit=True, fetch="lastrowid"
     )
 
-def get_all_passages():
-    return execute_query("SELECT id, title, type, source_language, target_language, created_at FROM passages ORDER BY created_at DESC", fetch="all")
+def get_all_passages(user_id: int):
+    return execute_query("SELECT id, title, type, source_language, target_language, created_at FROM passages WHERE user_id = ? ORDER BY created_at DESC", (user_id,), fetch="all")
 
-def get_passage_by_id(passage_id: int) -> dict:
-    row = execute_query("SELECT raw_json FROM passages WHERE id = ?", (passage_id,), fetch="one")
+def get_passage_by_id(user_id: int, passage_id: int) -> dict:
+    row = execute_query("SELECT raw_json FROM passages WHERE id = ? AND user_id = ?", (passage_id, user_id), fetch="one")
     if row and 'raw_json' in row:
         return json.loads(row['raw_json'])
     return None
 
-def delete_passage(passage_id: int):
-    execute_query("DELETE FROM passages WHERE id = ?", (passage_id,), commit=True)
+def delete_passage(user_id: int, passage_id: int):
+    execute_query("DELETE FROM passages WHERE id = ? AND user_id = ?", (passage_id, user_id), commit=True)
 
-def add_pronunciation_score(target_sentence: str, score: int):
+# --- 발음 점수 관리 ---
+def add_pronunciation_score(user_id: int, target_sentence: str, score: int):
     execute_query(
-        "INSERT INTO pronunciation_scores (target_sentence, score, created_at) VALUES (?, ?, ?)",
-        (target_sentence, score, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        "INSERT INTO pronunciation_scores (user_id, target_sentence, score, created_at) VALUES (?, ?, ?, ?)",
+        (user_id, target_sentence, score, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
         commit=True
     )
 
-def get_recent_pronunciation_scores(limit: int = 15):
-    rows = execute_query("SELECT target_sentence, score, created_at FROM pronunciation_scores ORDER BY created_at ASC", fetch="all")
+def get_recent_pronunciation_scores(user_id: int, limit: int = 15):
+    rows = execute_query("SELECT target_sentence, score, created_at FROM pronunciation_scores WHERE user_id = ? ORDER BY created_at ASC", (user_id,), fetch="all")
     return rows[-limit:]
 
-def get_dashboard_stats():
-    total_passages = execute_query("SELECT COUNT(*) as count FROM passages", fetch="one")['count']
-    total_words = execute_query("SELECT COUNT(*) as count FROM vocabularies", fetch="one")['count']
+# --- 대시보드 ---
+def get_dashboard_stats(user_id: int):
+    total_passages = execute_query("SELECT COUNT(*) as count FROM passages WHERE user_id = ?", (user_id,), fetch="one")['count']
+    total_words = execute_query("SELECT COUNT(*) as count FROM vocabularies WHERE user_id = ?", (user_id,), fetch="one")['count']
     
-    avg_score_row = execute_query("SELECT AVG(score) as avg_score FROM pronunciation_scores", fetch="one")
+    avg_score_row = execute_query("SELECT AVG(score) as avg_score FROM pronunciation_scores WHERE user_id = ?", (user_id,), fetch="one")
     avg_score = round(avg_score_row['avg_score'], 1) if avg_score_row and avg_score_row['avg_score'] else 0.0
     
     return {
@@ -169,11 +201,12 @@ def get_dashboard_stats():
         "avg_score": avg_score
     }
 
-def set_setting(key: str, value: str) -> bool:
+# --- 사용자 설정 ---
+def set_setting(user_id: int, key: str, value: str) -> bool:
     try:
         execute_query(
-            "INSERT INTO user_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-            (key, str(value)),
+            "INSERT INTO user_settings (user_id, key, value) VALUES (?, ?, ?) ON CONFLICT(user_id, key) DO UPDATE SET value=excluded.value",
+            (user_id, key, str(value)),
             commit=True
         )
         return True
@@ -181,9 +214,9 @@ def set_setting(key: str, value: str) -> bool:
         print(f"Error saving setting {key}: {e}")
         return False
 
-def get_setting(key: str, default_value: str = None) -> str:
+def get_setting(user_id: int, key: str, default_value: str = None) -> str:
     try:
-        row = execute_query("SELECT value FROM user_settings WHERE key = ?", (key,), fetch="one")
+        row = execute_query("SELECT value FROM user_settings WHERE user_id = ? AND key = ?", (user_id, key), fetch="one")
         if row and 'value' in row:
             return row['value']
         return default_value
