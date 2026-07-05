@@ -21,6 +21,7 @@ configure_gemini()
 init_db()
 
 st.set_page_config(page_title="EduAI Foreign Language", page_icon="🏫", layout="wide")
+st.logo("assets/logo.png")
 
 # 세션 상태 초기화
 if "logged_in" not in st.session_state:

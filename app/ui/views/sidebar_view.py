@@ -3,6 +3,7 @@ from app.utils.qr import get_local_ip, generate_qr_code
 
 def render_sidebar():
     with st.sidebar:
+        st.image("assets/logo.png", use_container_width=True)
         st.markdown("### 👤 사용자 정보")
         username = st.session_state.get("username", "Unknown")
         st.write(f"환영합니다, **{username}**님!")
