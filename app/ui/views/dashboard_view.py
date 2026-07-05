@@ -36,7 +36,7 @@ def render_dashboard_view():
                 with st.container(border=True):
                     scol1, scol2, scol3 = st.columns([3, 1, 1])
                     with scol1:
-                        st.markdown(f"**{p['title']}** ({p['p_type']})")
+                        st.markdown(f"**{p.get('title', '제목 없음')}** ({p.get('type', '알 수 없음')})")
                         st.caption(f"{p['created_at']}")
                     with scol2:
                         if st.button("📖", key=f"load_p_{p['id']}"):
