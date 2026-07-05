@@ -13,6 +13,7 @@ import json
 from app.ui.views.auth_view import render_auth_view
 from app.ui.views.sidebar_view import render_sidebar
 from app.ui.views.learn_view import render_learn_view
+from app.ui.views.library_view import render_library_view
 from app.ui.views.vocab_view import render_vocab_view
 from app.ui.views.dashboard_view import render_dashboard_view
 
@@ -48,13 +49,16 @@ else:
     
     st.title("🏫 EduAI 나의 창의적 외국어 학습 도우미")
     
-    tab1, tab2, tab3 = st.tabs(["📚 학습하기", "📝 나의 서재 (복습)", "📊 학습 대시보드"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📚 학습하기", "📖 지문 서재", "🔤 나만의 단어장", "📊 학습 대시보드"])
     
     with tab1:
         render_learn_view()
         
     with tab2:
-        render_vocab_view()
+        render_library_view()
         
     with tab3:
+        render_vocab_view()
+        
+    with tab4:
         render_dashboard_view()
