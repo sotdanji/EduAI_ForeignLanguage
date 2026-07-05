@@ -1,9 +1,27 @@
 import streamlit as st
 from app.utils.qr import get_local_ip, generate_qr_code
+import base64
+
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
 def render_sidebar():
     with st.sidebar:
-        st.image("assets/logo.png", use_container_width=True)
+        try:
+            img_b64 = get_base64_of_bin_file("assets/logo.png")
+            st.markdown(
+                f'''
+                <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                    <img src="data:image/png;base64,{img_b64}" width="180">
+                </div>
+                ''',
+                unsafe_allow_html=True
+            )
+        except:
+            pass
+
         st.markdown("### 👤 사용자 정보")
         username = st.session_state.get("username", "Unknown")
         st.write(f"환영합니다, **{username}**님!")
