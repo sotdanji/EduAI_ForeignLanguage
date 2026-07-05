@@ -698,69 +698,31 @@ def render_parsed_result(data: Dict[str, Any]):
                         st.session_state.rp_current_idx = 0
                         st.rerun()
 
-        else:
-            st.subheader("🎙️ 문장별 발음 연습")
-            st.write("원어민 발음을 듣고 마이크로 직접 따라 읽어보세요. AI 선생님이 발음을 평가해 줍니다.")
-            
-            sentence_options = [f"문장 {i+1}: {line.get('source_text', '')}" for i, line in enumerate(contents)]
-            selected_sent_str = st.selectbox("연습할 문장을 선택하세요", sentence_options)
-            
-            if selected_sent_str:
-                selected_idx = sentence_options.index(selected_sent_str)
-                target_text = contents[selected_idx].get('source_text', '')
-                
-                st.info(f"**목표 문장:** {target_text}")
-                
-                if hasattr(st, "audio_input"):
-                    audio_val = st.audio_input("마이크를 켜고 큰 소리로 따라 읽어보세요", key=f"stt_input_{selected_idx}")
-                    
-                    if audio_val:
-                        with st.spinner("AI가 발음을 분석 중입니다..."):
-                            audio_bytes = audio_val.getvalue()
-                            ahash = hash(audio_bytes)
-                            skey = f"read_res_{selected_idx}"
-                            if st.session_state.get(f"ahash_{skey}") != ahash:
-                                res = pronunciation_agent.evaluate_pronunciation(audio_bytes, target_text, source_lang)
-                                st.session_state[f"ahash_{skey}"] = ahash
-                                st.session_state[skey] = res
-                                add_pronunciation_score(st.session_state["user_id"], target_text, res.get('score', 0))
-                            else:
-                                res = st.session_state[skey]
-                                
-                            col_s1, col_s2 = st.columns([1, 3])
-                            with col_s1:
-                                st.metric("발음 정확도", f"{res.get('score', 0)}점")
-                            with col_s2:
-                                st.markdown(f"**인식된 문장:** {res.get('transcription', '')}")
-                                st.success(f"**AI 튜터 피드백:** {res.get('feedback', '')}")
-                else:
-                    st.warning("현재 브라우저 환경에서는 마이크 입력(audio_input)을 지원하지 않습니다.")
-
     st.markdown("---")
 
-    # 3.6. 🎭 3단계 섀도잉 연습 모드
+    # 3.6. 🎙️ 스피킹 & 섀도잉 집중 연습 (일반 지문/대화문 공통)
     if contents:
-        st.subheader("🎭 3단계 섀도잉 연습 모드")
-        st.write("선택한 문장의 원어민 발음을 '정상 -> 느리게 -> 정상' 3단계로 듣고 따라해 보세요.")
+        st.subheader("🎙️ 스피킹 & 섀도잉 집중 연습")
+        st.write("원어민 발음을 3단계 섀도잉으로 듣고 연습하거나, 바로 마이크로 읽어 발음을 평가받으세요.")
         
-        shadow_options = [f"문장 {i+1}: {line.get('source_text', '')}" for i, line in enumerate(contents)]
-        selected_shadow_str = st.selectbox("섀도잉 연습할 문장을 선택하세요", shadow_options, key="shadow_select")
+        practice_options = [f"문장 {i+1}: {line.get('source_text', '')}" for i, line in enumerate(contents)]
+        selected_prac_str = st.selectbox("연습할 문장을 선택하세요", practice_options, key="practice_select")
         
-        if selected_shadow_str:
-            selected_idx = shadow_options.index(selected_shadow_str)
+        if selected_prac_str:
+            selected_idx = practice_options.index(selected_prac_str)
             target_text = contents[selected_idx].get('source_text', '')
             source_lang = data.get("source_language", "en")
             current_gender = st.session_state.get("tts_gender", "male")
             voice = get_voice_for_language(source_lang, gender=current_gender)
             
-            st.info(f"**연습 문장:** {target_text}")
+            st.info(f"**목표 문장:** {target_text}")
             
             # 오디오 생성
             skey_normal = f"shadow_normal_{selected_idx}_{current_gender}"
             skey_slow = f"shadow_slow_{selected_idx}_{current_gender}"
             
             if skey_normal not in st.session_state:
-                with st.spinner("섀도잉 오디오를 생성 중입니다..."):
+                with st.spinner("가이드 오디오를 생성 중입니다..."):
                     st.session_state[skey_normal] = generate_audio_sync(target_text, voice, rate="+0%")
                     st.session_state[skey_slow] = generate_audio_sync(target_text, voice, rate="-30%")
             
@@ -771,7 +733,7 @@ def render_parsed_result(data: Dict[str, Any]):
             player_html = f"""
             <div style="text-align:center; margin:10px 0;">
                 <button id="shadow-play-btn" style="background-color:#4CAF50; border:none; color:white; padding:10px 24px; font-size:16px; border-radius:8px; cursor:pointer; font-weight:bold;">
-                    ▶ 3단계 섀도잉 듣기
+                    ▶ 3단계 섀도잉 가이드 듣기
                 </button>
                 <div id="shadow-status" style="margin-top:10px; font-size:14px; color:#555;">대기 중...</div>
             </div>
@@ -819,7 +781,7 @@ def render_parsed_result(data: Dict[str, Any]):
                             audioPlayer.play();
                             audioPlayer.onended = function() {{
                                 step = 4;
-                                status.innerText = "완료! 이제 마이크로 녹음해 보세요.";
+                                status.innerText = "완료! 아래 마이크로 연습해 보세요.";
                                 btn.disabled = false;
                                 btn.style.backgroundColor = "#4CAF50";
                             }};
@@ -831,7 +793,7 @@ def render_parsed_result(data: Dict[str, Any]):
             components.html(player_html, height=120)
             
             if hasattr(st, "audio_input"):
-                shadow_audio_val = st.audio_input("섀도잉 완료 후 마이크로 따라 읽어보세요", key=f"shadow_input_{selected_idx}")
+                shadow_audio_val = st.audio_input("마이크를 켜고 큰 소리로 따라 읽어보세요", key=f"shadow_input_{selected_idx}")
                 if shadow_audio_val:
                     with st.spinner("AI가 발음을 분석 중입니다..."):
                         audio_bytes = shadow_audio_val.getvalue()
@@ -850,7 +812,7 @@ def render_parsed_result(data: Dict[str, Any]):
                             st.metric("발음 정확도", f"{res.get('score', 0)}점")
                         with col_sh2:
                             st.markdown(f"**인식된 문장:** {res.get('transcription', '')}")
-                            st.success(f"**AI 튜터 피드백:** {res.get('feedback', '')}")
+                            st.success(f"**AI 선생님 피드백:** {res.get('feedback', '')}")
             else:
                 st.warning("현재 브라우저 환경에서는 마이크 입력을 지원하지 않습니다.")
 

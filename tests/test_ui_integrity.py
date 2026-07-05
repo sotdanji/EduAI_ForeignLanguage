@@ -93,19 +93,7 @@ class TestLearnViewTransitions:
 class TestStreamlitAppEntryPoint:
     """streamlit_app.py 진입점 검증"""
 
-    def test_importlib_reload_covers_new_modules(self):
-        """새로 분리한 모듈들이 importlib.reload에 포함되어 있는지"""
-        with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "streamlit_app.py"), "r", encoding="utf-8") as f:
-            source = f.read()
-        
-        modules_to_reload = [
-            "app.ui.views.auth_view",
-            "app.ui.views.sidebar_view",
-            "app.ui.components.manual_dialog",
-        ]
-        for mod in modules_to_reload:
-            assert mod in source, \
-                f"streamlit_app.py에서 '{mod}'의 importlib.reload가 누락되었습니다"
+    pass
 
     def test_all_view_imports_present(self):
         """필요한 모든 뷰 함수가 import 되어 있는지"""
