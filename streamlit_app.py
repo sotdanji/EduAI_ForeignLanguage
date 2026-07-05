@@ -38,7 +38,7 @@ if "switch_to_tab1" not in st.session_state:
 if st.session_state["load_passage_id"]:
     passage = get_passage_by_id(st.session_state["user_id"], st.session_state["load_passage_id"])
     if passage:
-        st.session_state["parsed_data"] = json.loads(passage['parsed_data'])
+        st.session_state["parsed_data"] = passage
         st.session_state["switch_to_tab1"] = True
     st.session_state["load_passage_id"] = None
     st.rerun()
