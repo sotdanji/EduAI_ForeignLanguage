@@ -6,14 +6,7 @@ def render_sidebar():
         # 중앙 정렬을 위해 컬럼 사용 (양 옆 여백 1, 중앙 이미지 2 비율)
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            try:
-                import os
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                root_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
-                logo_path = os.path.join(root_dir, "assets", "logo.png")
-                st.image(logo_path, use_container_width=True)
-            except Exception as e:
-                pass
+            st.image("assets/logo.png", use_container_width=True)
         
         st.markdown("### 👤 사용자 정보")
         username = st.session_state.get("username", "Unknown")
