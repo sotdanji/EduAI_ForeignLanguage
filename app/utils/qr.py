@@ -26,4 +26,4 @@ def generate_qr_code(data: str) -> Image.Image:
     qr.add_data(data)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
-    return img
+    return img.get_image()
