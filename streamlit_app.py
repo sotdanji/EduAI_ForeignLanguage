@@ -48,7 +48,7 @@ else:
     
     st.title("🏫 EduAI 나만의 꼬마 외국어 선생님")
     
-    tab1, tab2, tab3 = st.tabs(["📚 학습하기", "📝 단어장", "📊 대시보드 및 서재"])
+    tab1, tab2, tab3 = st.tabs(["📚 학습하기", "📝 나의 서재 (복습)", "📊 학습 대시보드"])
     
     with tab1:
         render_learn_view()
