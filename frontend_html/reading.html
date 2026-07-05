@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduAI - 리딩 및 결과</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1326;
+            color: #dae2fd;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(23, 31, 51, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(30, 41, 59, 0.5);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+        .reading-text-shadow {
+            text-shadow: 0 0 20px rgba(173, 198, 255, 0.1);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#dae2fd",
+                        "on-primary": "#002e6a",
+                        "surface-container-highest": "#2d3449",
+                        "tertiary": "#4edea3",
+                        "on-secondary": "#233143",
+                        "inverse-surface": "#dae2fd",
+                        "surface-container-low": "#131b2e",
+                        "inverse-primary": "#005ac2",
+                        "surface-container-high": "#222a3d",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004395",
+                        "surface-tint": "#adc6ff",
+                        "on-secondary-container": "#a7b6cc",
+                        "surface": "#0b1326",
+                        "tertiary-fixed": "#6ffbbe",
+                        "primary": "#adc6ff",
+                        "on-background": "#dae2fd",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "secondary-container": "#39485a",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "surface-bright": "#31394d",
+                        "surface-container": "#171f33",
+                        "secondary": "#b9c8de",
+                        "surface-container-lowest": "#060e20",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "on-tertiary-fixed": "#002113",
+                        "error": "#ffb4ab",
+                        "on-tertiary": "#003824",
+                        "on-primary-fixed": "#001a42",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-tertiary-container": "#00311f",
+                        "on-error": "#690005",
+                        "background": "#0b1326",
+                        "inverse-on-surface": "#283044",
+                        "error-container": "#93000a",
+                        "secondary-fixed": "#d4e4fa",
+                        "primary-container": "#4d8eff",
+                        "on-surface-variant": "#c2c6d6",
+                        "tertiary-container": "#00a572",
+                        "surface-dim": "#0b1326",
+                        "on-primary-container": "#00285d",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-variant": "#2d3449",
+                        "primary-fixed-dim": "#adc6ff",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "outline-variant": "#424754",
+                        "outline": "#8c909f"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "margin-mobile": "20px",
+                        "xs": "4px",
+                        "margin-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-xl border-b border-outline-variant/20 flex justify-between items-center px-margin-mobile py-md">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A sophisticated professional portrait of a young adult student looking confident, shot in a high-tech studio with soft blue ambient lighting. The background features a subtle, blurred digital interface. The overall aesthetic is clean, modern, and intelligent, consistent with a high-end educational AI application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0otqSdq2tSrHenqPOGJxBdoJPONWmksyJHDK8ULCc0G7z9UgiMz5_yVy88qPxc28T99hDLyIxQionypBj2Atce47Ele9xC9QQ-SDXIODaBfsvnQPN1pj2higjZNKQBR4u1xHuK3BMMmVeHh7PyQ07xayp-8-mWpk-_RtfmcG2VWIfYFj9p2mUBL_4lbwQTRa0_XwXhp3sc0gQ-byuc3LzcXIM__RghRAoCc-paQQZ6anG9xElG5nQ9HjLqD4uCIYmXaCX4HJItp5G"/>
+</div>
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary tracking-tight">EduAI</h1>
+</div>
+<button id="open-settings-btn" class="material-symbols-outlined text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform">settings</button>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Left Column: Reading & Interaction -->
+<div class="lg:col-span-8 space-y-lg">
+<!-- Hero Title -->
+<section class="space-y-sm">
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-tertiary/10 text-tertiary text-label-sm font-label-sm rounded uppercase tracking-wider">레벨: 중급</span>
+<span class="text-outline font-label-md text-label-md">• 10분 분량</span>
+</div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface leading-tight">현대 교육에 미치는 인공지능의 영향</h2>
+</section>
+<!-- Split-Screen Reading Passage -->
+<article class="glass-panel rounded-xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
+<!-- English Side -->
+<div class="flex-1 p-lg border-b md:border-b-0 md:border-r border-outline-variant/30 space-y-md">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-primary uppercase">영어 원문</span>
+<button id="speak-btn" class="material-symbols-outlined text-secondary hover:text-primary active:text-primary transition-colors">volume_up</button>
+</div>
+<div id="english-source" class="space-y-md font-body-lg text-body-lg leading-relaxed text-on-surface reading-text-shadow">
+<p>Artificial Intelligence (AI) is transforming the landscape of modern education by providing personalized learning experiences. Unlike traditional classroom settings, AI-powered platforms can adapt to a student's unique pace and style.</p>
+<p class="bg-primary/10 border-l-2 border-primary pl-4 py-2">One significant advantage is the ability to analyze vast amounts of data to identify areas where a student might be struggling.</p>
+<p>Furthermore, AI tools can automate administrative tasks, allowing educators to focus more on mentorship and creative teaching methods.</p>
+</div>
+</div>
+<!-- Korean Translation Side -->
+<div class="flex-1 p-lg bg-surface-container/30 space-y-md">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-outline uppercase">한국어 번역</span>
+<div class="flex gap-4">
+    <button class="text-label-sm font-label-sm text-secondary hover:text-primary transition-colors flex items-center gap-1" id="toggle-read-translation">
+        <span class="material-symbols-outlined text-[18px]" id="read-translation-icon">check_box_outline_blank</span>
+        번역도 읽기
+    </button>
+    <button class="text-label-sm font-label-sm text-secondary hover:text-primary transition-colors" id="toggle-translation">번역 숨기기</button>
+</div>
+</div>
+<div class="space-y-md font-body-lg text-body-lg leading-relaxed text-on-surface-variant/80 transition-opacity duration-300" id="translation-content">
+<p>인공지능(AI)은 개인화된 학습 경험을 제공함으로써 현대 교육의 지형을 변화시키고 있습니다. 전통적인 교실 환경과 달리, AI 기반 플랫폼은 학생의 고유한 속도와 스타일에 맞출 수 있습니다.</p>
+<p class="border-l-2 border-transparent pl-4 py-2">한 가지 큰 장점은 방대한 양의 데이터를 분석하여 학생이 어려움을 겪고 있을 수 있는 부분을 파악하는 능력입니다.</p>
+<p>나아가, AI 도구는 행정 업무를 자동화하여 교육자가 멘토링과 창의적인 교수법에 더 집중할 수 있게 해줍니다.</p>
+</div>
+</div>
+</article>
+<!-- Interactive Quiz Section -->
+<section class="space-y-md">
+    <div class="flex items-center justify-between">
+        <h3 class="font-headline-md text-headline-md text-on-surface">연습문제 및 퀴즈</h3>
+        <div class="flex gap-2 bg-surface-container-low p-1 rounded-lg" id="quiz-tabs" style="display: none;">
+            <button id="tab-original-quiz" class="px-4 py-1.5 rounded-md text-label-md font-label-md transition-all text-secondary hover:text-primary">교과서 연습문제</button>
+            <button id="tab-ai-quiz" class="px-4 py-1.5 rounded-md text-label-md font-label-md transition-all bg-primary text-on-primary shadow">AI 이해도 퀴즈</button>
+        </div>
+    </div>
+<div id="quiz-container" class="glass-panel p-lg rounded-xl space-y-lg">
+<div class="space-y-sm">
+<span class="text-label-sm font-label-sm text-outline">질문 1 / 5</span>
+<p class="font-body-lg text-body-lg text-on-surface">지문에 따르면, 전통적인 교실과 비교하여 교육에서 AI의 주요 이점은 무엇입니까?</p>
+</div>
+<div class="space-y-sm">
+<!-- Option: Selected -->
+<button class="w-full text-left p-md rounded-lg border border-primary bg-primary/10 flex items-center justify-between group transition-all">
+<span class="font-body-md text-body-md text-on-surface">A) 개인화된 학습 경험을 제공합니다.</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</button>
+<!-- Option: Default -->
+<button class="w-full text-left p-md rounded-lg border border-outline-variant hover:border-primary/50 hover:bg-surface-bright/30 transition-all">
+<span class="font-body-md text-body-md text-on-surface-variant">B) 인간 교사를 완전히 대체합니다.</span>
+</button>
+<!-- Option: Incorrect Feedback -->
+<button class="w-full text-left p-md rounded-lg border border-error bg-error/10 flex items-center justify-between opacity-80">
+<span class="font-body-md text-body-md text-on-surface-variant">C) 모든 사람을 위해 내용을 기본적인 수준으로 단순화합니다.</span>
+<span class="material-symbols-outlined text-error">cancel</span>
+</button>
+<!-- Option: Correct Highlighted -->
+<button class="w-full text-left p-md rounded-lg border border-tertiary bg-tertiary/10 flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface">D) 학생들의 사회적 상호작용을 자동화합니다.</span>
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">stars</span>
+</button>
+</div>
+<div class="pt-4 flex justify-between items-center border-t border-outline-variant/20">
+<button class="px-md py-sm rounded-lg text-secondary font-label-md text-label-md hover:bg-white/5 transition-colors">이전</button>
+<button class="px-lg py-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">다음 질문</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Sidebar (Vocab & Stats) -->
+<aside class="lg:col-span-4 space-y-lg">
+<!-- Vocabulary List -->
+<section class="glass-panel rounded-xl overflow-hidden flex flex-col h-[500px]">
+<div class="p-md border-b border-outline-variant/20 bg-surface-container-high/50 flex items-center justify-between">
+<h3 class="font-headline-md text-[18px] text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">menu_book</span>
+                        단어장
+                    </h3>
+<span id="vocab-count-badge" class="bg-primary/20 text-primary text-[11px] px-2 py-0.5 rounded-full font-bold">12 단어</span>
+</div>
+<div id="vocab-container" class="flex-1 overflow-y-auto custom-scrollbar p-md space-y-sm">
+<!-- Word Item -->
+<div class="p-md rounded-lg bg-surface-container-low border border-outline-variant/10 hover:border-primary/30 transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-bold text-primary text-body-md">Transforming</span>
+<span class="material-symbols-outlined text-outline text-sm group-hover:text-primary transition-colors">bookmark</span>
+</div>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-2">변화시키다, 변형시키다</p>
+<p class="text-xs text-outline italic">"AI is transforming the landscape of modern education..."</p>
+</div>
+<!-- Word Item -->
+<div class="p-md rounded-lg bg-surface-container-low border border-outline-variant/10 hover:border-primary/30 transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-bold text-primary text-body-md">Personalized</span>
+<span class="material-symbols-outlined text-outline text-sm group-hover:text-primary transition-colors">bookmark</span>
+</div>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-2">개인화된, 개별 맞춤의</p>
+<p class="text-xs text-outline italic">"...providing personalized learning experiences."</p>
+</div>
+<!-- Word Item -->
+<div class="p-md rounded-lg bg-surface-container-low border border-outline-variant/10 hover:border-primary/30 transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-bold text-primary text-body-md">Automation</span>
+<span class="material-symbols-outlined text-outline text-sm group-hover:text-primary transition-colors">bookmark</span>
+</div>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-2">자동화</p>
+<p class="text-xs text-outline italic">"AI tools can automate administrative tasks..."</p>
+</div>
+<!-- Word Item -->
+<div class="p-md rounded-lg bg-surface-container-low border border-outline-variant/10 hover:border-primary/30 transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-bold text-primary text-body-md">Mentorship</span>
+<span class="material-symbols-outlined text-outline text-sm group-hover:text-primary transition-colors">bookmark</span>
+</div>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-2">멘토링, 지도</p>
+<p class="text-xs text-outline italic">"...focus more on mentorship and creative teaching."</p>
+</div>
+</div>
+<div class="p-md bg-surface-container-high/50">
+<button class="w-full py-2 bg-secondary-container text-on-secondary rounded-lg font-label-md text-label-md hover:opacity-90 transition-all">전체 단어 복습하기</button>
+</div>
+</section>
+<!-- AI Progress / Results Snapshot -->
+<section class="glass-panel p-lg rounded-xl space-y-md">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">insights</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[18px] text-on-surface">리딩 점수</h4>
+<p class="text-label-sm font-label-sm text-outline">AI 튜터와 동기화 중...</p>
+</div>
+</div>
+<div class="space-y-sm pt-2">
+<div class="flex justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">이해도</span>
+<span class="text-tertiary">85%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-sm pt-2">
+<div class="bg-surface-container p-3 rounded-lg border border-outline-variant/20 text-center">
+<span class="block text-primary font-bold text-xl">142</span>
+<span class="text-[10px] text-outline uppercase tracking-wider">분당 단어 수</span>
+</div>
+<div class="bg-surface-container p-3 rounded-lg border border-outline-variant/20 text-center">
+<span class="block text-tertiary font-bold text-xl">+4</span>
+<span class="text-[10px] text-outline uppercase tracking-wider">새 단어</span>
+</div>
+</div>
+</section>
+<!-- Visual Context Image -->
+<div class="rounded-xl overflow-hidden border border-outline-variant/20 h-48 relative group">
+<img class="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-700" data-alt="A futuristic digital library environment with holograms representing knowledge paths and data streams. The scene is rendered in deep navy and electric blue tones with soft, glowing accents. The atmosphere is quiet, focused, and high-tech, evoking the feeling of an advanced AI-powered learning workspace. High definition, cinematic lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzZ2VIzOZq4rHQ9oDWWCNirVy1huIHVhwVONVEIOO4Bf9uA7B6_OIouuBFVGvi6VBcWYsdwKyibTIzs4Of0ZIgcN2Dgq9iGe0Tb61yVw9i1zGaRbJWusJEaM47-fZpahR60N_lhJ1a1fzd3w3hmwXkVLN_rdnKd4BuaaeNbZcXUoow1amvm2OcqIQg2O4k_l7tDFCYFiXvM37XDRnrUEfbnxPVTLrfOeZDiwwlhjdBsHBx1vUkdlbDWeDZuIm-F7VDLtu6CwDUUaNU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-60"></div>
+<div class="absolute bottom-4 left-4">
+<p class="text-white font-bold text-label-md">시각적 컨텍스트 모드</p>
+<p class="text-white/60 text-[11px]">텍스트에서 장면 생성</p>
+</div>
+</div>
+</aside>
+</main>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="fixed inset-0 z-[100] hidden flex-col items-center justify-center">
+    <div class="absolute inset-0 bg-background/80 backdrop-blur-sm transition-opacity" id="settings-overlay"></div>
+    <div class="glass-panel w-11/12 max-w-3xl rounded-2xl p-lg relative z-10 shadow-2xl transition-all transform scale-95 opacity-0 duration-200 overflow-y-auto max-h-[90vh]" id="settings-panel">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-headline-md text-[20px] text-on-surface">학습 환경 설정</h3>
+            <button id="close-settings-btn" class="material-symbols-outlined text-outline hover:text-primary transition-colors">close</button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Column: TTS Engine -->
+            <div class="space-y-3">
+                <label class="block text-label-sm font-label-sm text-outline">TTS 엔진 선택</label>
+                
+                <label class="tts-engine-label flex items-start gap-3 p-3 rounded-lg border border-primary bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors" id="label-edge-tts">
+                    <input type="radio" name="tts-engine" value="edge" class="mt-1 text-primary focus:ring-primary h-4 w-4" checked>
+                    <div>
+                        <div class="font-bold text-body-md text-on-surface">프리미엄 AI 목소리 (Edge TTS)</div>
+                        <div class="text-[12px] text-on-surface-variant mt-1">Microsoft 고품질 무료 음성. 남/여 성우가 교차로 낭독합니다. (안정적이고 빠름)</div>
+                    </div>
+                </label>
+                
+                <label class="tts-engine-label flex items-start gap-3 p-3 rounded-lg border border-outline-variant/30 cursor-pointer hover:bg-surface-bright/50 transition-colors" id="label-google-tts">
+                    <input type="radio" name="tts-engine" value="google" class="mt-1 text-primary focus:ring-primary h-4 w-4">
+                    <div>
+                        <div class="font-bold text-body-md text-on-surface">프리미엄 AI 목소리 (Gemini TTS)</div>
+                        <div class="text-[12px] text-on-surface-variant mt-1">Google 최고급 음성. 가장 사람에 가깝고 자연스럽습니다. (분당 10회 제한)</div>
+                    </div>
+                </label>
+                
+                <label class="tts-engine-label flex items-start gap-3 p-3 rounded-lg border border-outline-variant/30 cursor-pointer hover:bg-surface-bright/50 transition-colors" id="label-basic-tts">
+                    <input type="radio" name="tts-engine" value="basic" class="mt-1 text-primary focus:ring-primary h-4 w-4">
+                    <div>
+                        <div class="font-bold text-body-md text-on-surface">기본 무료 목소리 (내장 TTS)</div>
+                        <div class="text-[12px] text-on-surface-variant mt-1">기기(OS) 내장 목소리. 아래 지정한 성우로 계속 읽습니다. (긴 소설 등에 적합)</div>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Right Column: Settings -->
+            <div class="space-y-6">
+                <!-- Voice -->
+                <div class="hidden space-y-4" id="basic-voice-container">
+                    <div class="space-y-2">
+                        <label class="block text-label-sm font-label-sm text-outline">원문(영어) 성우 선택 (기본 무료 목소리 전용)</label>
+                        <select id="setting-voice-en" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-2 text-body-md text-on-surface focus:outline-none focus:border-primary">
+                            <option value="">기본 음성 (System Default)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-label-sm font-label-sm text-outline">번역문(한국어) 성우 선택 (기본 무료 목소리 전용)</label>
+                        <select id="setting-voice-ko" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-2 text-body-md text-on-surface focus:outline-none focus:border-primary">
+                            <option value="">기본 음성 (System Default)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Repeat -->
+                    <div class="space-y-2">
+                        <label class="block text-label-sm font-label-sm text-outline">반복 횟수</label>
+                        <select id="setting-repeat" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-2 text-body-md text-on-surface focus:outline-none focus:border-primary">
+                            <option value="1">1회 반복</option>
+                            <option value="3">3회 반복</option>
+                            <option value="5">5회 반복</option>
+                            <option value="infinite">무한 반복</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Speed -->
+                    <div class="space-y-2">
+                        <label class="block text-label-sm font-label-sm text-outline">음성 속도</label>
+                        <select id="setting-speed" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-2 text-body-md text-on-surface focus:outline-none focus:border-primary">
+                            <option value="0.75">조금 느리게 (0.75x)</option>
+                            <option value="0.9" selected>약간 느리게 (0.9x)</option>
+                            <option value="1.0">보통 (1.0x)</option>
+                            <option value="1.25">조금 빠르게 (1.25x)</option>
+                            <option value="1.5">빠르게 (1.5x)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Font Size -->
+                <div class="space-y-2">
+                    <label class="block text-label-sm font-label-sm text-outline">글자 크기 (전체 화면)</label>
+                    <select id="setting-fontsize" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-2 text-body-md text-on-surface focus:outline-none focus:border-primary">
+                        <option value="text-sm">작게</option>
+                        <option value="text-base" selected>보통</option>
+                        <option value="text-lg">크게</option>
+                        <option value="text-xl">아주 크게</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8">
+            <button id="save-settings-btn" class="w-full py-3 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">설정 저장하기</button>
+        </div>
+    </div>
+</div>
+
+<!-- BottomNavBar -->
+<nav class="fixed bottom-4 left-margin-mobile right-margin-mobile rounded-full z-50 bg-surface-container/60 dark:bg-surface-container/60 backdrop-blur-2xl border border-white/10 shadow-[0_0_20px_rgba(173,198,255,0.15)] flex justify-around items-center h-16 max-w-md mx-auto">
+<a href="/" class="flex items-center justify-center text-secondary p-3 hover:bg-white/5 transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined">photo_camera</span>
+</a>
+<a href="/reading" class="flex items-center justify-center bg-primary text-on-primary rounded-full w-12 h-12 shadow-[0_0_12px_rgba(173,198,255,0.4)] active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+</a>
+<a href="/tutor" class="flex items-center justify-center text-secondary p-3 hover:bg-white/5 transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined">mic</span>
+</a>
+</nav>
+<script>
+// Micro-interactions
+const toggleBtn = document.getElementById('toggle-translation');
+const content = document.getElementById('translation-content');
+let visible = true;
+
+toggleBtn.addEventListener('click', () => {
+    visible = !visible;
+    if (visible) {
+        content.classList.remove('opacity-0', 'pointer-events-none');
+        toggleBtn.textContent = '번역 숨기기';
+    } else {
+        content.classList.add('opacity-0', 'pointer-events-none');
+        toggleBtn.textContent = '번역 보기';
+    }
+});
+
+// Settings State
+let appSettings = {
+    voiceUriEn: '',
+    voiceUriKo: '',
+    repeat: '1',
+    speed: '0.9',
+    fontSize: 'text-base'
+};
+
+// Load settings from localStorage
+const savedSettings = localStorage.getItem('eduai_settings');
+if (savedSettings) {
+    try {
+        appSettings = { ...appSettings, ...JSON.parse(savedSettings) };
+    } catch(e) {}
+}
+
+// Apply Font Size to main content area
+const applyFontSize = (sizeClass) => {
+    const mainEl = document.querySelector('main');
+    // Remove existing text-* classes
+    mainEl.classList.forEach(cls => {
+        if (cls.startsWith('text-') && !cls.includes('on-surface')) {
+            mainEl.classList.remove(cls);
+        }
+    });
+    mainEl.classList.add(sizeClass);
+};
+applyFontSize(appSettings.fontSize);
+
+// Helper for gender icons
+const getGenderIcon = (gender) => {
+    if (gender === 'male') return '👨';
+    if (gender === 'female') return '👩';
+    if (gender === 'narrator_male') return '👨‍💼';
+    if (gender === 'narrator_female') return '👩‍💼';
+    return '🤖';
+};
+
+// Load Data from Session Storage
+const parseResultJson = sessionStorage.getItem('parseResult');
+if (parseResultJson) {
+    try {
+        const data = JSON.parse(parseResultJson);
+
+        // 1. Text & Translation
+        if (data.contents && data.contents.length > 0) {
+            const englishHtml = data.contents.map((c, i) => {
+                let icon = getGenderIcon(c.speaker_gender);
+
+                return `<div class="flex items-start gap-2 group">
+                    <button class="gender-toggle mt-1 text-2xl opacity-60 hover:opacity-100 transition-all hover:scale-110 shrink-0" data-index="${i}" title="클릭하여 성우 성별 변경">${icon}</button>
+                    <p class="sentence-item flex-1 p-2 rounded cursor-pointer border-l-4 border-transparent hover:bg-primary/10 transition-colors" data-index="${i}">${c.en}</p>
+                </div>`;
+            }).join('');
+            const koreanHtml = data.contents.map(c => `<p class="p-2">${c.ko}</p>`).join('');
+            document.getElementById('english-source').innerHTML = englishHtml;
+            document.getElementById('translation-content').innerHTML = koreanHtml;
+            
+            // Sync row heights between English and Korean columns
+            const syncRowHeights = () => {
+                const engRows = document.getElementById('english-source').children;
+                const korRows = document.getElementById('translation-content').children;
+                const isMobile = window.innerWidth < 768; // tailwind md breakpoint
+                
+                for (let i = 0; i < engRows.length; i++) {
+                    if (korRows[i]) {
+                        engRows[i].style.height = 'auto';
+                        korRows[i].style.height = 'auto';
+                        if (!isMobile) {
+                            // On desktop, force same height so they align perfectly
+                            const maxH = Math.max(engRows[i].offsetHeight, korRows[i].offsetHeight);
+                            engRows[i].style.height = maxH + 'px';
+                            korRows[i].style.height = maxH + 'px';
+                        }
+                    }
+                }
+            };
+            
+            // Wait for DOM layout then sync
+            setTimeout(syncRowHeights, 0);
+            window.addEventListener('resize', syncRowHeights);
+        }
+        
+        if (data.title) {
+            document.querySelector('h2.font-headline-lg-mobile').textContent = data.title;
+        }
+
+        // 2. Vocabulary
+        const vocabContainer = document.getElementById('vocab-container');
+        const vocabBadge = document.getElementById('vocab-count-badge');
+        if (data.vocabulary && data.vocabulary.length > 0) {
+            vocabBadge.textContent = `${data.vocabulary.length} 단어`;
+            vocabContainer.innerHTML = data.vocabulary.map(v => `
+                <div class="p-md rounded-lg bg-surface-container-low border border-outline-variant/10 hover:border-primary/30 transition-colors group cursor-pointer">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="font-bold text-primary text-body-md">${v.word}</span>
+                        <span class="material-symbols-outlined text-outline text-sm group-hover:text-primary transition-colors">bookmark</span>
+                    </div>
+                    <p class="text-label-sm font-label-sm text-on-surface-variant mb-2">${v.meaning}</p>
+                </div>
+            `).join('');
+        }
+
+        // 3. Quiz & Original Questions
+        const quizTabs = document.getElementById('quiz-tabs');
+        const tabOriginal = document.getElementById('tab-original-quiz');
+        const tabAi = document.getElementById('tab-ai-quiz');
+        
+        let hasOriginal = data.original_questions && data.original_questions.length > 0;
+        let hasAi = data.ai_quiz && data.ai_quiz.length > 0;
+        
+        if (hasOriginal && hasAi) {
+            quizTabs.style.display = 'flex';
+        } else {
+            quizTabs.style.display = 'none';
+        }
+        
+        window.quizData = hasAi ? data.ai_quiz : [];
+        window.originalQuizData = hasOriginal ? data.original_questions : [];
+        
+        const setActiveTab = (type) => {
+            window.currentQuizType = type;
+            window.currentQuizIndex = 0;
+            if (type === 'original') {
+                if (tabOriginal && tabAi) {
+                    tabOriginal.classList.add('bg-primary', 'text-on-primary', 'shadow');
+                    tabOriginal.classList.remove('text-secondary', 'hover:text-primary');
+                    tabAi.classList.remove('bg-primary', 'text-on-primary', 'shadow');
+                    tabAi.classList.add('text-secondary', 'hover:text-primary');
+                }
+                renderOriginalQuiz();
+            } else {
+                if (tabOriginal && tabAi) {
+                    tabAi.classList.add('bg-primary', 'text-on-primary', 'shadow');
+                    tabAi.classList.remove('text-secondary', 'hover:text-primary');
+                    tabOriginal.classList.remove('bg-primary', 'text-on-primary', 'shadow');
+                    tabOriginal.classList.add('text-secondary', 'hover:text-primary');
+                }
+                renderQuiz();
+            }
+        };
+        
+        if (tabOriginal && tabAi) {
+            tabOriginal.addEventListener('click', () => setActiveTab('original'));
+            tabAi.addEventListener('click', () => setActiveTab('ai'));
+        }
+        
+        if (hasOriginal || hasAi) {
+            setActiveTab(hasOriginal ? 'original' : 'ai');
+        } else {
+            document.getElementById('quiz-container').innerHTML = '<p class="text-outline p-4">생성된 연습문제나 퀴즈가 없습니다.</p>';
+        }
+
+    } catch(e) {
+        console.error("Error parsing result", e);
+    }
+}
+
+// Sentence Selection Logic
+document.querySelectorAll('.sentence-item').forEach(item => {
+    item.addEventListener('click', () => {
+        item.classList.toggle('bg-primary/20');
+        item.classList.toggle('border-primary');
+        item.classList.toggle('selected-sentence');
+    });
+});
+
+document.querySelectorAll('.gender-toggle').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = btn.getAttribute('data-index');
+        const parseResultJson = sessionStorage.getItem('parseResult');
+        if (parseResultJson) {
+            let data = JSON.parse(parseResultJson);
+            let current = data.contents[index].speaker_gender || 'neutral';
+            
+            const order = ['neutral', 'narrator_male', 'narrator_female', 'male', 'female'];
+            let nextIndex = (order.indexOf(current) + 1) % order.length;
+            let nextGender = order[nextIndex];
+            
+            const isNarrator = (g) => g === 'neutral' || g === 'narrator_male' || g === 'narrator_female';
+            
+            // If transitioning between narrator types, batch update all matching narrators
+            if (isNarrator(current) && isNarrator(nextGender)) {
+                data.contents.forEach((c, i) => {
+                    if ((c.speaker_gender || 'neutral') === current) {
+                        c.speaker_gender = nextGender;
+                        // Also update DOM icon for others
+                        const otherBtn = document.querySelector(`.gender-toggle[data-index="${i}"]`);
+                        if (otherBtn) {
+                            otherBtn.textContent = getGenderIcon(nextGender);
+                            otherBtn.classList.add('scale-125');
+                            setTimeout(() => otherBtn.classList.remove('scale-125'), 150);
+                        }
+                    }
+                });
+            } else {
+                data.contents[index].speaker_gender = nextGender;
+                btn.textContent = getGenderIcon(nextGender);
+                btn.classList.add('scale-125');
+                setTimeout(() => btn.classList.remove('scale-125'), 150);
+            }
+            
+            sessionStorage.setItem('parseResult', JSON.stringify(data));
+        }
+    });
+});
+
+// Quiz logic
+function renderQuiz() {
+    const quizContainer = document.getElementById('quiz-container');
+    if (!window.quizData || window.quizData.length === 0) return;
+    
+    const q = window.quizData[window.currentQuizIndex];
+    const labels = ['A', 'B', 'C', 'D', 'E'];
+    const isLast = window.currentQuizIndex === window.quizData.length - 1;
+    
+    quizContainer.innerHTML = `
+        <div class="space-y-sm">
+            <span class="text-label-sm font-label-sm text-outline">질문 ${window.currentQuizIndex + 1} / ${window.quizData.length}</span>
+            <p class="font-body-lg text-body-lg text-on-surface">${q.question}</p>
+        </div>
+        <div class="space-y-sm mt-4">
+            ${q.options.map((opt, i) => `
+                <button class="quiz-option w-full text-left p-md rounded-lg border border-outline-variant hover:border-primary/50 hover:bg-surface-bright/30 transition-all" data-index="${i}">
+                    <span class="font-body-md text-body-md text-on-surface-variant">${labels[i] || '-'}) ${opt}</span>
+                </button>
+            `).join('')}
+        </div>
+        <div id="quiz-feedback" class="hidden mt-4 p-4 rounded-lg font-body-md text-body-md"></div>
+        <div class="pt-4 mt-6 flex justify-between items-center border-t border-outline-variant/20">
+            <button id="btn-prev-quiz" class="px-md py-sm rounded-lg text-secondary font-label-md text-label-md hover:bg-white/5 transition-colors ${window.currentQuizIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''}">이전</button>
+            <button id="btn-next-quiz" class="px-lg py-sm ${isLast ? 'bg-secondary' : 'bg-primary'} text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">${isLast ? '결과 보기' : '다음 질문'}</button>
+        </div>
+    `;
+    
+    document.querySelectorAll('.quiz-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.quiz-option').forEach(b => {
+                b.classList.remove('bg-error/10', 'border-error', 'text-error', 'bg-primary/10', 'border-primary', 'text-primary');
+            });
+            
+            const selectedIdx = parseInt(btn.getAttribute('data-index'));
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.remove('hidden', 'bg-error/10', 'text-error', 'bg-primary/10', 'text-primary');
+            
+            if (selectedIdx === q.answer) {
+                btn.classList.add('bg-primary/10', 'border-primary', 'text-primary');
+                feedback.classList.add('bg-primary/10', 'text-primary');
+                feedback.innerHTML = "<strong>정답입니다! 🎉</strong>";
+                window.quizData[window.currentQuizIndex].userAnswerCorrect = true;
+            } else {
+                btn.classList.add('bg-error/10', 'border-error', 'text-error');
+                feedback.classList.add('bg-error/10', 'text-error');
+                feedback.innerHTML = "<strong>오답입니다. 다시 시도해보세요.</strong>";
+                window.quizData[window.currentQuizIndex].userAnswerCorrect = false;
+            }
+        });
+    });
+    
+    document.getElementById('btn-prev-quiz').addEventListener('click', () => {
+        if (window.currentQuizIndex > 0) {
+            window.currentQuizIndex--;
+            renderQuiz();
+        }
+    });
+    
+    document.getElementById('btn-next-quiz').addEventListener('click', () => {
+        if (!isLast) {
+            window.currentQuizIndex++;
+            renderQuiz();
+        } else {
+            // Calculate score
+            const total = window.quizData.length;
+            const correctCount = window.quizData.filter(q => q.userAnswerCorrect === true).length;
+            const wrongCount = window.quizData.filter(q => q.userAnswerCorrect === false).length;
+            const accuracy = Math.round((correctCount / total) * 100) || 0;
+            
+            // Show completion screen
+            quizContainer.innerHTML = `
+                <div class="text-center space-y-md p-lg">
+                    <span class="material-symbols-outlined text-[64px] text-primary mb-2">celebration</span>
+                    <h3 class="font-headline-md text-headline-md text-on-surface">모든 퀴즈를 완료했습니다!</h3>
+                    
+                    <div class="bg-surface-container/50 rounded-xl p-md my-4 max-w-sm mx-auto">
+                        <div class="flex justify-between items-center border-b border-outline-variant/20 pb-2 mb-2">
+                            <span class="text-on-surface-variant font-label-md">맞은 문제</span>
+                            <span class="text-primary font-bold">${correctCount}개</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-outline-variant/20 pb-2 mb-2">
+                            <span class="text-on-surface-variant font-label-md">틀린 문제</span>
+                            <span class="text-error font-bold">${wrongCount}개</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <span class="text-on-surface-variant font-label-md">정답률</span>
+                            <span class="text-on-surface font-bold">${accuracy}%</span>
+                        </div>
+                    </div>
+                    
+                    <p class="font-body-md text-body-md text-on-surface-variant">수고하셨습니다! 다시 퀴즈를 풀거나, 본문 학습 및 AI 발음 듣기를 계속하실 수 있습니다.</p>
+                    <button id="btn-restart-quiz" class="mt-6 px-lg py-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">처음부터 다시 풀기</button>
+                </div>
+            `;
+            document.getElementById('btn-restart-quiz').addEventListener('click', () => {
+                window.quizData.forEach(q => q.userAnswerCorrect = undefined);
+                window.currentQuizIndex = 0;
+                renderQuiz();
+            });
+        }
+    });
+}
+
+function renderOriginalQuiz() {
+    const quizContainer = document.getElementById('quiz-container');
+    if (!window.originalQuizData || window.originalQuizData.length === 0) return;
+    
+    const q = window.originalQuizData[window.currentQuizIndex];
+    const labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const isLast = window.currentQuizIndex === window.originalQuizData.length - 1;
+    
+    let hasAnswer = (q.answer !== undefined && q.answer !== null);
+    
+    quizContainer.innerHTML = `
+        <div class="bg-tertiary/10 border-l-4 border-tertiary p-3 rounded-r-lg mb-4">
+            <p class="text-tertiary text-label-sm font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">info</span>
+                AI가 유추한 임시 정답입니다. 선생님의 의견과 다를 경우 선생님을 따르세요.
+            </p>
+        </div>
+        <div class="space-y-sm">
+            <span class="text-label-sm font-label-sm text-outline">질문 ${window.currentQuizIndex + 1} / ${window.originalQuizData.length}</span>
+            <p class="font-body-lg text-body-lg text-on-surface">${q.question_text || ''}</p>
+        </div>
+        <div class="space-y-sm mt-4">
+            ${(q.options || []).map((opt, i) => `
+                <button class="original-quiz-option w-full text-left p-md rounded-lg border border-outline-variant hover:border-primary/50 hover:bg-surface-bright/30 transition-all" data-index="${i}">
+                    <span class="font-body-md text-body-md text-on-surface-variant">${labels[i] || '-'}) ${opt}</span>
+                </button>
+            `).join('')}
+        </div>
+        <div id="original-quiz-feedback" class="hidden mt-4 p-4 rounded-lg font-body-md text-body-md"></div>
+        <div class="pt-4 mt-6 flex justify-between items-center border-t border-outline-variant/20">
+            <button id="btn-prev-original" class="px-md py-sm rounded-lg text-secondary font-label-md text-label-md hover:bg-white/5 transition-colors ${window.currentQuizIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''}">이전</button>
+            <button id="btn-next-original" class="px-lg py-sm ${isLast ? 'bg-secondary' : 'bg-primary'} text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">${isLast ? '결과 보기' : '다음 질문'}</button>
+        </div>
+    `;
+    
+    document.querySelectorAll('.original-quiz-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.original-quiz-option').forEach(b => {
+                b.classList.remove('bg-error/10', 'border-error', 'text-error', 'bg-primary/10', 'border-primary', 'text-primary');
+            });
+            
+            const selectedIdx = parseInt(btn.getAttribute('data-index'));
+            const feedback = document.getElementById('original-quiz-feedback');
+            feedback.classList.remove('hidden', 'bg-error/10', 'text-error', 'bg-primary/10', 'text-primary');
+            
+            if (hasAnswer && selectedIdx === q.answer) {
+                btn.classList.add('bg-primary/10', 'border-primary', 'text-primary');
+                feedback.classList.add('bg-primary/10', 'text-primary');
+                feedback.innerHTML = "<strong>정답입니다! 🎉</strong>";
+                window.originalQuizData[window.currentQuizIndex].userAnswerCorrect = true;
+            } else if (hasAnswer) {
+                btn.classList.add('bg-error/10', 'border-error', 'text-error');
+                feedback.classList.add('bg-error/10', 'text-error');
+                feedback.innerHTML = "<strong>오답입니다. 다시 시도해보세요.</strong>";
+                window.originalQuizData[window.currentQuizIndex].userAnswerCorrect = false;
+            } else {
+                btn.classList.add('bg-primary/10', 'border-primary', 'text-primary');
+                feedback.classList.add('bg-primary/10', 'text-primary');
+                feedback.innerHTML = "<strong>AI도 정답을 확신할 수 없는 문제입니다.</strong>";
+            }
+        });
+    });
+    
+    document.getElementById('btn-prev-original').addEventListener('click', () => {
+        if (window.currentQuizIndex > 0) {
+            window.currentQuizIndex--;
+            renderOriginalQuiz();
+        }
+    });
+    
+    document.getElementById('btn-next-original').addEventListener('click', () => {
+        if (!isLast) {
+            window.currentQuizIndex++;
+            renderOriginalQuiz();
+        } else {
+            const total = window.originalQuizData.length;
+            const correctCount = window.originalQuizData.filter(q => q.userAnswerCorrect === true).length;
+            const wrongCount = window.originalQuizData.filter(q => q.userAnswerCorrect === false).length;
+            const accuracy = Math.round((correctCount / total) * 100) || 0;
+            
+            quizContainer.innerHTML = `
+                <div class="text-center space-y-md p-lg">
+                    <span class="material-symbols-outlined text-[64px] text-primary mb-2">celebration</span>
+                    <h3 class="font-headline-md text-headline-md text-on-surface">교과서 연습문제를 완료했습니다!</h3>
+                    
+                    <div class="bg-surface-container/50 rounded-xl p-md my-4 max-w-sm mx-auto">
+                        <div class="flex justify-between items-center border-b border-outline-variant/20 pb-2 mb-2">
+                            <span class="text-on-surface-variant font-label-md">맞은 문제</span>
+                            <span class="text-primary font-bold">${correctCount}개</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-outline-variant/20 pb-2 mb-2">
+                            <span class="text-on-surface-variant font-label-md">틀린 문제</span>
+                            <span class="text-error font-bold">${wrongCount}개</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <span class="text-on-surface-variant font-label-md">정답률</span>
+                            <span class="text-on-surface font-bold">${accuracy}%</span>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-restart-original" class="mt-6 px-lg py-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">다시 풀기</button>
+                </div>
+            `;
+            document.getElementById('btn-restart-original').addEventListener('click', () => {
+                window.originalQuizData.forEach(q => q.userAnswerCorrect = undefined);
+                window.currentQuizIndex = 0;
+                renderOriginalQuiz();
+            });
+        }
+    });
+}
+
+// Settings Modal Logic
+const settingsModal = document.getElementById('settings-modal');
+const settingsPanel = document.getElementById('settings-panel');
+const openSettingsBtn = document.getElementById('open-settings-btn');
+const closeSettingsBtn = document.getElementById('close-settings-btn');
+const overlay = document.getElementById('settings-overlay');
+const saveSettingsBtn = document.getElementById('save-settings-btn');
+
+const engineRadios = document.getElementsByName('tts-engine');
+const basicVoiceContainer = document.getElementById('basic-voice-container');
+const voiceSelectEn = document.getElementById('setting-voice-en');
+const voiceSelectKo = document.getElementById('setting-voice-ko');
+const repeatSelect = document.getElementById('setting-repeat');
+const speedSelect = document.getElementById('setting-speed');
+const fontSelect = document.getElementById('setting-fontsize');
+
+// Default app settings
+if (!appSettings.ttsEngine) appSettings.ttsEngine = 'edge'; // Default to premium
+
+let voices = [];
+
+function populateVoices() {
+    const allVoices = window.speechSynthesis.getVoices();
+    
+    // English voices
+    const enVoices = allVoices.filter(v => v.lang.startsWith('en'));
+    voiceSelectEn.innerHTML = '<option value="">영어 기본 음성 (System Default)</option>';
+    (enVoices.length > 0 ? enVoices : allVoices).forEach(voice => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.value = voice.voiceURI;
+        if (voice.voiceURI === appSettings.voiceUriEn) {
+            option.selected = true;
+        }
+        voiceSelectEn.appendChild(option);
+    });
+    
+    // Korean voices
+    const koVoices = allVoices.filter(v => v.lang.startsWith('ko'));
+    voiceSelectKo.innerHTML = '<option value="">한국어 기본 음성 (System Default)</option>';
+    (koVoices.length > 0 ? koVoices : allVoices).forEach(voice => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.value = voice.voiceURI;
+        if (voice.voiceURI === appSettings.voiceUriKo) {
+            option.selected = true;
+        }
+        voiceSelectKo.appendChild(option);
+    });
+}
+
+populateVoices();
+if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = populateVoices;
+}
+
+const updateEngineUI = () => {
+    let selectedEngine = 'edge';
+    
+    document.querySelectorAll('.tts-engine-label').forEach(label => {
+        label.classList.remove('border-primary', 'bg-primary/5', 'hover:bg-primary/10');
+        label.classList.add('border-outline-variant/30', 'hover:bg-surface-bright/50');
+    });
+
+    for (const radio of engineRadios) {
+        if (radio.checked) {
+            selectedEngine = radio.value;
+            const parentLabel = radio.closest('.tts-engine-label');
+            if (parentLabel) {
+                parentLabel.classList.add('border-primary', 'bg-primary/5', 'hover:bg-primary/10');
+                parentLabel.classList.remove('border-outline-variant/30', 'hover:bg-surface-bright/50');
+            }
+            break;
+        }
+    }
+    
+    if (selectedEngine === 'basic') {
+        basicVoiceContainer.classList.remove('hidden');
+    } else {
+        basicVoiceContainer.classList.add('hidden');
+    }
+};
+
+for (const radio of engineRadios) {
+    radio.addEventListener('change', updateEngineUI);
+}
+
+const openModal = () => {
+    // Populate current settings
+    for (const radio of engineRadios) {
+        if (radio.value === appSettings.ttsEngine) {
+            radio.checked = true;
+            break;
+        }
+    }
+    updateEngineUI();
+    
+    repeatSelect.value = appSettings.repeat || '1';
+    speedSelect.value = appSettings.speed || '0.9';
+    fontSelect.value = appSettings.fontSize || 'text-base';
+    
+    settingsModal.classList.remove('hidden');
+    setTimeout(() => {
+        settingsPanel.classList.remove('scale-95', 'opacity-0');
+        settingsPanel.classList.add('scale-100', 'opacity-100');
+    }, 10);
+};
+
+const closeModal = () => {
+    settingsPanel.classList.remove('scale-100', 'opacity-100');
+    settingsPanel.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        settingsModal.classList.add('hidden');
+    }, 200);
+};
+
+openSettingsBtn.addEventListener('click', openModal);
+closeSettingsBtn.addEventListener('click', closeModal);
+overlay.addEventListener('click', closeModal);
+
+saveSettingsBtn.addEventListener('click', () => {
+    for (const radio of engineRadios) {
+        if (radio.checked) {
+            appSettings.ttsEngine = radio.value;
+            break;
+        }
+    }
+    appSettings.voiceUriEn = voiceSelectEn.value;
+    appSettings.voiceUriKo = voiceSelectKo.value;
+    appSettings.repeat = repeatSelect.value;
+    appSettings.speed = speedSelect.value;
+    appSettings.fontSize = fontSelect.value;
+    
+    localStorage.setItem('eduai_settings', JSON.stringify(appSettings));
+    applyFontSize(appSettings.fontSize);
+    
+    closeModal();
+});
+
+// Translation read toggle
+const toggleReadTranslationBtn = document.getElementById('toggle-read-translation');
+const readTranslationIcon = document.getElementById('read-translation-icon');
+let readTranslation = false;
+
+if (toggleReadTranslationBtn) {
+    toggleReadTranslationBtn.addEventListener('click', () => {
+        readTranslation = !readTranslation;
+        if (readTranslation) {
+            readTranslationIcon.textContent = 'check_box';
+            readTranslationIcon.classList.add('text-primary');
+        } else {
+            readTranslationIcon.textContent = 'check_box_outline_blank';
+            readTranslationIcon.classList.remove('text-primary');
+        }
+    });
+}
+
+// 4. TTS (Text-to-Speech)
+const speakBtn = document.getElementById('speak-btn');
+let currentRepeatCount = 0;
+let isInfinite = false;
+let targetRepeatCount = 1;
+let isPlaying = false;
+let currentAudio = null; // For Premium (HTML5 Audio)
+let audioCache = {}; // Cache for premium audio blobs: { "text_gender_speed": blobUrl }
+
+const stopTTS = () => {
+    isPlaying = false;
+    // Stop basic TTS
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    
+    // Stop premium TTS
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+    }
+    
+    speakBtn.textContent = 'volume_up';
+    speakBtn.classList.remove('text-tertiary', 'animate-pulse');
+    speakBtn.classList.add('text-secondary');
+    currentRepeatCount = 0;
+};
+
+// Premium AI Fetch
+const fetchPremiumAudio = async (text, gender, speed, lang, engine) => {
+    const cacheKey = `${text}_${gender}_${speed}_${lang}_${engine}`;
+    if (audioCache[cacheKey]) {
+        return audioCache[cacheKey];
+    }
+    
+    const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, gender, speed: parseFloat(speed), lang, engine })
+    });
+    
+    if (!response.ok) throw new Error('Failed to generate TTS');
+    
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    audioCache[cacheKey] = url;
+    return url;
+};
+
+const playTTS = async () => {
+    let utterancesData = [];
+    const englishNodes = Array.from(document.getElementById('english-source').querySelectorAll('p'));
+    const koreanNodes = Array.from(document.getElementById('translation-content').querySelectorAll('p'));
+    
+    const selectedNodes = document.querySelectorAll('.selected-sentence');
+    const targetNodes = selectedNodes.length > 0 ? Array.from(selectedNodes) : englishNodes;
+    
+    // Check if we have parsed data (for gender)
+    let parsedData = null;
+    const parseResultJson = sessionStorage.getItem('parseResult');
+    if (parseResultJson) {
+        try { parsedData = JSON.parse(parseResultJson); } catch(e) {}
+    }
+    
+    let rawUtterances = [];
+    targetNodes.forEach(node => {
+        const text = node.textContent.trim();
+        const index = englishNodes.indexOf(node);
+        
+        // Skip purely empty or punctuation-only strings to prevent TTS crashes
+        if (!text || !/[a-zA-Z0-9\uAC00-\uD7A3]/.test(text)) return;
+        
+        let gender = 'neutral';
+        if (parsedData && parsedData.contents && parsedData.contents[index]) {
+            gender = parsedData.contents[index].speaker_gender || 'neutral';
+        }
+        
+        rawUtterances.push({ text: text, lang: 'en-US', gender: gender });
+        
+        if (readTranslation) {
+            if (index !== -1 && koreanNodes[index]) {
+                const koText = koreanNodes[index].textContent.trim();
+                if (koText && /[a-zA-Z0-9\uAC00-\uD7A3]/.test(koText)) {
+                    rawUtterances.push({ text: koText, lang: 'ko-KR', gender: gender });
+                }
+            }
+        }
+    });
+    
+    // Group consecutive utterances with the same gender and language to avoid API rate limits (10 RPM for Preview TTS)
+    for (const u of rawUtterances) {
+        if (utterancesData.length > 0) {
+            const last = utterancesData[utterancesData.length - 1];
+            if (last.gender === u.gender && last.lang === u.lang) {
+                last.text += " " + u.text;
+                continue;
+            }
+        }
+        utterancesData.push({ ...u });
+    }
+    
+    if (utterancesData.length === 0) return;
+    
+    let currentUtteranceIndex = 0;
+    const engine = appSettings.ttsEngine || 'edge';
+    const speed = appSettings.speed || '0.9';
+    
+    const playNextUtterance = async () => {
+        if (!isPlaying) return; // Cancelled
+        
+        if (currentUtteranceIndex >= utterancesData.length) {
+            currentRepeatCount++;
+            if (isInfinite || currentRepeatCount < targetRepeatCount) {
+                currentUtteranceIndex = 0;
+                setTimeout(() => {
+                    if (isPlaying) {
+                        playNextUtterance();
+                    }
+                }, 500);
+            } else {
+                stopTTS();
+            }
+            return;
+        }
+        
+        const data = utterancesData[currentUtteranceIndex];
+        if (!data.text.trim()) {
+            currentUtteranceIndex++;
+            playNextUtterance();
+            return;
+        }
+        
+        if (engine === 'edge' || engine === 'google') {
+            try {
+                // Determine premium gender mapping: map ko-KR female to nova, etc.
+                const url = await fetchPremiumAudio(data.text, data.gender, speed, data.lang, engine);
+                if (!isPlaying) return; // if stopped while fetching
+                
+                currentAudio = new Audio(url);
+                currentAudio.onended = () => {
+                    currentUtteranceIndex++;
+                    playNextUtterance();
+                };
+                currentAudio.onerror = (e) => {
+                    console.error("Audio playback error", e);
+                    stopTTS();
+                };
+                await currentAudio.play();
+            } catch (error) {
+                console.error(error);
+                alert("Premium TTS API 요청에 실패했습니다. (API 키 오류 또는 한도 초과)");
+                stopTTS();
+            }
+        } else {
+            // Basic Browser TTS
+            const msg = new SpeechSynthesisUtterance(data.text);
+            msg.lang = data.lang;
+            msg.rate = parseFloat(speed);
+            
+            if (data.lang === 'en-US') {
+                if (appSettings.voiceUriEn) {
+                    const allVoices = window.speechSynthesis.getVoices();
+                    const selectedVoice = allVoices.find(v => v.voiceURI === appSettings.voiceUriEn);
+                    if (selectedVoice) msg.voice = selectedVoice;
+                } else {
+                    // Fallback to match by gender if no specific choice
+                    const enVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+                    if (enVoices.length > 0) {
+                        let chosen = enVoices[0];
+                        const lowerGender = data.gender.toLowerCase();
+                        enVoices.forEach(v => {
+                            const name = v.name.toLowerCase();
+                            if (lowerGender === 'male' && (name.includes('male') || name.includes('man') || name.includes('guy') || name.includes('david') || name.includes('mark'))) chosen = v;
+                            if (lowerGender === 'female' && (name.includes('female') || name.includes('woman') || name.includes('girl') || name.includes('zira'))) chosen = v;
+                        });
+                        msg.voice = chosen; 
+                    }
+                }
+            } else if (data.lang === 'ko-KR') {
+                if (appSettings.voiceUriKo) {
+                    const allVoices = window.speechSynthesis.getVoices();
+                    const selectedVoice = allVoices.find(v => v.voiceURI === appSettings.voiceUriKo);
+                    if (selectedVoice) msg.voice = selectedVoice;
+                } else {
+                    // Fallback to match by gender if no specific choice
+                    const koVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('ko'));
+                    if (koVoices.length > 0) {
+                        let chosen = koVoices[0];
+                        const lowerGender = data.gender.toLowerCase();
+                        koVoices.forEach(v => {
+                            const name = v.name.toLowerCase();
+                            if (lowerGender === 'male' && (name.includes('male') || name.includes('man') || name.includes('guy') || name.includes('injoon'))) chosen = v;
+                            if (lowerGender === 'female' && (name.includes('female') || name.includes('woman') || name.includes('girl') || name.includes('sunhi'))) chosen = v;
+                        });
+                        msg.voice = chosen; 
+                    }
+                }
+            }
+            
+            msg.onend = () => {
+                currentUtteranceIndex++;
+                playNextUtterance();
+            };
+            msg.onerror = () => {
+                stopTTS();
+            };
+            window.speechSynthesis.speak(msg);
+        }
+    };
+    
+    isPlaying = true;
+    speakBtn.textContent = 'stop_circle';
+    speakBtn.classList.remove('text-secondary');
+    speakBtn.classList.add('text-tertiary', 'animate-pulse');
+    
+    playNextUtterance();
+};
+
+if (speakBtn) {
+    speakBtn.addEventListener('click', () => {
+        if (isPlaying) {
+            stopTTS();
+            return;
+        }
+        
+        currentRepeatCount = 0;
+        targetRepeatCount = appSettings.repeat === 'infinite' ? 9999 : parseInt(appSettings.repeat, 10);
+        isInfinite = appSettings.repeat === 'infinite';
+        
+        playTTS();
+    });
+}
+
+</script>
+</body></html>
