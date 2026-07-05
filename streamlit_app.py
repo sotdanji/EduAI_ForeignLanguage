@@ -3,21 +3,7 @@ import os
 from dotenv import load_dotenv
 
 import sys
-import importlib
-
-# 강제 모듈 리로드 (Streamlit 캐싱 방지)
-if "app.agents.parser_agent" in sys.modules:
-    importlib.reload(sys.modules["app.agents.parser_agent"])
-if "app.ui.result_view" in sys.modules:
-    importlib.reload(sys.modules["app.ui.result_view"])
-if "app.db.database" in sys.modules:
-    importlib.reload(sys.modules["app.db.database"])
-if "app.ui.views.auth_view" in sys.modules:
-    importlib.reload(sys.modules["app.ui.views.auth_view"])
-if "app.ui.views.sidebar_view" in sys.modules:
-    importlib.reload(sys.modules["app.ui.views.sidebar_view"])
-if "app.ui.components.manual_dialog" in sys.modules:
-    importlib.reload(sys.modules["app.ui.components.manual_dialog"])
+# 프로덕션에서는 importlib.reload를 사용하지 않습니다. (성능 최적화)
 
 from app.agents import configure_gemini
 from app.db.database import init_db, get_passage_by_id
