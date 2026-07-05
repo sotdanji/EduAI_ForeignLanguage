@@ -97,6 +97,7 @@ def render_learn_view():
                         if parsed and "error" not in parsed:
                             if st.session_state.get("switch_to_tab1") is None: # Prevent duplicate insertion
                                 add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                        st.rerun()
 
         elif input_type == "📸 카메라 촬영":
             camera_image = st.camera_input("카메라로 교재 촬영")
@@ -110,6 +111,7 @@ def render_learn_view():
                         if parsed and "error" not in parsed:
                             if st.session_state.get("switch_to_tab1") is None:
                                 add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                        st.rerun()
 
         else:
             input_text = st.text_area("외국어 텍스트 입력", height=200)
@@ -121,6 +123,7 @@ def render_learn_view():
                         if parsed and "error" not in parsed:
                             if st.session_state.get("switch_to_tab1") is None:
                                 add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                        st.rerun()
 
     else:
         col_h1, col_h2 = st.columns([1, 2.5])
