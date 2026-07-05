@@ -4,7 +4,10 @@ from app.db.database import get_dashboard_stats, get_recent_pronunciation_scores
 def render_dashboard_view():
     st.write("지금까지의 학습 기록을 확인하고 이전 지문을 다시 불러와 복습해 보세요!")
 
-    stats = get_dashboard_stats(st.session_state["user_id"])
+    period_options = ["오늘", "이번 주", "이번 달", "이번 학기", "전체"]
+    selected_period = st.selectbox("📅 통계 기간 선택", period_options, index=4)
+
+    stats = get_dashboard_stats(st.session_state["user_id"], period=selected_period)
     col_d1, col_d2, col_d3 = st.columns(3)
     with col_d1:
         st.metric(label="총 분석 지문 수", value=f"{stats['total_passages']} 개")
@@ -17,8 +20,8 @@ def render_dashboard_view():
     db_col1, db_col2 = st.columns([1, 1], gap="large")
 
     with db_col1:
-        st.markdown("#### 🎯 최근 발음 점수 추이")
-        scores = get_recent_pronunciation_scores(st.session_state["user_id"])
+        st.markdown("#### 📈 최근 발음 점수 추이")
+        scores = get_recent_pronunciation_scores(st.session_state["user_id"], period=selected_period)
         if scores:
             import pandas as pd
             df_scores = pd.DataFrame(scores)

@@ -183,16 +183,50 @@ def add_pronunciation_score(user_id: int, target_sentence: str, score: int):
         commit=True
     )
 
-def get_recent_pronunciation_scores(user_id: int, limit: int = 15):
-    rows = execute_query("SELECT target_sentence, score, created_at FROM pronunciation_scores WHERE user_id = ? ORDER BY created_at ASC", (user_id,), fetch="all")
+def get_date_threshold(period: str) -> str:
+    from datetime import datetime, timedelta
+    now = datetime.now()
+    if period == "오늘":
+        target = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == "이번 주":
+        target = now - timedelta(days=now.weekday())
+        target = target.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == "이번 달":
+        target = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    elif period == "이번 학기":
+        if 3 <= now.month <= 8:
+            target = now.replace(month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
+        elif now.month >= 9:
+            target = now.replace(month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
+        else: # 1, 2
+            target = now.replace(year=now.year - 1, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
+    else:
+        return None
+    return target.strftime("%Y-%m-%d %H:%M:%S")
+
+def get_recent_pronunciation_scores(user_id: int, limit: int = 15, period: str = "전체"):
+    threshold = get_date_threshold(period)
+    if threshold:
+        rows = execute_query("SELECT target_sentence, score, created_at FROM pronunciation_scores WHERE user_id = ? AND created_at >= ? ORDER BY created_at ASC", (user_id, threshold), fetch="all")
+    else:
+        rows = execute_query("SELECT target_sentence, score, created_at FROM pronunciation_scores WHERE user_id = ? ORDER BY created_at ASC", (user_id,), fetch="all")
     return rows[-limit:]
 
 # --- 대시보드 ---
-def get_dashboard_stats(user_id: int):
-    total_passages = execute_query("SELECT COUNT(*) as count FROM passages WHERE user_id = ?", (user_id,), fetch="one")['count']
-    total_words = execute_query("SELECT COUNT(*) as count FROM vocabularies WHERE user_id = ?", (user_id,), fetch="one")['count']
+def get_dashboard_stats(user_id: int, period: str = "전체"):
+    threshold = get_date_threshold(period)
     
-    avg_score_row = execute_query("SELECT AVG(score) as avg_score FROM pronunciation_scores WHERE user_id = ?", (user_id,), fetch="one")
+    if threshold:
+        query_suffix = " AND created_at >= ?"
+        params = (user_id, threshold)
+    else:
+        query_suffix = ""
+        params = (user_id,)
+        
+    total_passages = execute_query(f"SELECT COUNT(*) as count FROM passages WHERE user_id = ?{query_suffix}", params, fetch="one")['count']
+    total_words = execute_query(f"SELECT COUNT(*) as count FROM vocabularies WHERE user_id = ?{query_suffix}", params, fetch="one")['count']
+    
+    avg_score_row = execute_query(f"SELECT AVG(score) as avg_score FROM pronunciation_scores WHERE user_id = ?{query_suffix}", params, fetch="one")
     avg_score = round(avg_score_row['avg_score'], 1) if avg_score_row and avg_score_row['avg_score'] else 0.0
     
     return {
