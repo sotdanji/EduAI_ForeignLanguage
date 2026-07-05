@@ -564,7 +564,7 @@ def render_parsed_result(data: Dict[str, Any]):
     is_dialogue = data.get("type") == "dialogue"
     
     if contents:
-        from app.core.llm_engine import evaluate_pronunciation
+        from app.agents.pronunciation_agent import evaluate_pronunciation
         from app.core.tts_engine import generate_audio_sync, get_voice_for_language
         from app.db.database import add_pronunciation_score
         source_lang = data.get("source_language", "en")
@@ -860,7 +860,7 @@ def render_parsed_result(data: Dict[str, Any]):
     if audio_value and st.session_state.get("last_audio_id") != audio_value.file_id:
         st.session_state.last_audio_id = audio_value.file_id
         with st.spinner("음성을 인식하고 있습니다..."):
-            from app.core.llm_engine import transcribe_audio
+            from app.agents.pronunciation_agent import transcribe_audio
             audio_bytes = audio_value.read()
             mime_type = audio_value.type
             recognized_text = transcribe_audio(audio_bytes, mime_type)
@@ -881,7 +881,7 @@ def render_parsed_result(data: Dict[str, Any]):
         # 2) AI 튜터 답변 생성 및 출력
         with st.chat_message("assistant"):
             with st.spinner("AI 선생님이 답변을 작성 중입니다..."):
-                from app.core.llm_engine import get_tutor_chat_response
+                from app.agents.tutor_agent import get_tutor_chat_response
                 student_level = st.session_state.get("student_level", "중학교 1학년")
                 ai_response = get_tutor_chat_response(st.session_state.chat_history, data, mode=st.session_state.current_chat_mode, student_level=student_level)
                 st.markdown(ai_response)
