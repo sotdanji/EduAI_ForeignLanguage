@@ -87,7 +87,12 @@ class ParserAgent(BaseGeminiAgent):
         prompt = f"""
         당신은 엘리트 외국어 선생님입니다. 
         현재 지도하는 학생의 수준은 '{student_level}'입니다.
-        제공된 텍스트를 분석하세요.
+        다음 <INPUT_TEXT> 태그 안의 텍스트를 분석하세요.
+
+        <INPUT_TEXT>
+        {text}
+        </INPUT_TEXT>
+
         1. 원본 본문(Reading)이나 대화문(Dialogue) 부분만 추출하여 문장 단위로 분할(contents)하고 '{target_language}'(으)로 번역하세요. 만약 원본과 '{target_language}'이(가) 동일하다면 번역 대신 원문을 문맥에 맞게 다듬어 제공하세요. 페이지 번호 등은 무시하세요.
            {style_instruction}
            {tone_instruction}
@@ -102,7 +107,7 @@ class ParserAgent(BaseGeminiAgent):
         try:
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
-                contents=[text, prompt],
+                contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
                     response_schema=self.RESPONSE_SCHEMA,
