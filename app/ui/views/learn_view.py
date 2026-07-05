@@ -75,7 +75,7 @@ def render_learn_view():
                         curr_tone_idx = tone_opts.index(st.session_state["translation_tone"]) if st.session_state["translation_tone"] in tone_opts else 0
                         new_tone = st.selectbox("🗣️ 튜터 말투", tone_opts, index=curr_tone_idx)
             
-            if st.button("설정 저장"):
+            if st.button("설정 저장", help="선택한 학습 설정을 저장합니다."):
                 set_setting(st.session_state["user_id"], "student_level", new_student_level)
                 set_setting(st.session_state["user_id"], "target_language", new_target_language)
                 set_setting(st.session_state["user_id"], "tts_gender", new_gender)
@@ -104,7 +104,7 @@ def render_learn_view():
             if uploaded_image:
                 img = PIL.Image.open(uploaded_image)
                 cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
-                if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True):
+                if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True, help="파란색 박스로 지정한 영역의 텍스트를 AI 선생님이 분석합니다."):
                     if not custom_title.strip():
                         st.error("지문 제목을 입력해주세요.")
                     elif check_passage_title_exists(st.session_state["user_id"], custom_title.strip()):
@@ -125,7 +125,7 @@ def render_learn_view():
             if camera_image:
                 img = PIL.Image.open(camera_image)
                 cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
-                if st.button("🚀 촬영 영역 분석 시작", key="btn_cam", use_container_width=True):
+                if st.button("🚀 촬영 영역 분석 시작", key="btn_cam", use_container_width=True, help="카메라로 촬영한 영역의 텍스트를 AI 선생님이 분석합니다."):
                     if not custom_title.strip():
                         st.error("지문 제목을 입력해주세요.")
                     elif check_passage_title_exists(st.session_state["user_id"], custom_title.strip()):
@@ -143,7 +143,7 @@ def render_learn_view():
 
         elif input_type == "📝 텍스트 직접 입력":
             input_text = st.text_area("외국어 텍스트 입력", height=200)
-            if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True):
+            if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True, help="입력한 텍스트를 AI 선생님이 분석합니다."):
                 if input_text.strip():
                     if not custom_title.strip():
                         st.error("지문 제목을 입력해주세요.")
@@ -167,7 +167,7 @@ def render_learn_view():
                     import json
                     parsed = json.load(uploaded_json)
                     if "title" in parsed and "sentences" in parsed:
-                        if st.button("🚀 이 지문으로 학습 시작하기", use_container_width=True):
+                        if st.button("🚀 이 지문으로 학습 시작하기", use_container_width=True, help="현재 지문 내용을 분석하여 학습 집중 화면으로 이동합니다."):
                             st.session_state["parsed_data"] = parsed
                             add_passage(st.session_state["user_id"], parsed.get('title', '공유된 지문'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
                             st.rerun()
@@ -182,7 +182,7 @@ def render_learn_view():
             st.subheader("📝 분석 결과")
         with col_h2:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🔄 새로운 지문 분석하기 (돌아가기)", use_container_width=True):
+            if st.button("🔄 새로운 지문 분석하기 (돌아가기)", use_container_width=True, help="현재 학습을 종료하고 새로운 지문을 입력하는 화면으로 돌아갑니다."):
                 st.session_state["parsed_data"] = None
                 st.rerun()
 

@@ -24,7 +24,7 @@ def render_auth_view():
         """)
         
         from app.ui.components.manual_dialog import show_manual
-        if st.button("📖 EduAI 자세한 사용 설명서 보기", use_container_width=True):
+        if st.button("📖 EduAI 자세한 사용 설명서 보기", use_container_width=True, help="앱의 전체 기능과 사용 방법을 확인합니다."):
             show_manual()
         
     with col2:
@@ -35,7 +35,7 @@ def render_auth_view():
                 st.subheader("로그인")
                 login_user = st.text_input("아이디", key="login_user")
                 login_pw = st.text_input("비밀번호", type="password", key="login_pw")
-                if st.button("🔓 로그인", use_container_width=True):
+                if st.button("🔓 로그인", use_container_width=True, help="입력한 아이디와 비밀번호로 로그인합니다."):
                     # 엔터키 등으로 인한 공백/줄바꿈 문자 제거
                     clean_user = login_user.strip()
                     clean_pw = login_pw.strip()
@@ -55,7 +55,7 @@ def render_auth_view():
                 reg_pw = st.text_input("새 비밀번호", type="password", key="reg_pw")
                 reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm")
                 
-                if st.button("📝 가입하기", use_container_width=True):
+                if st.button("📝 가입하기", use_container_width=True, help="입력한 정보로 새로운 계정을 만듭니다."):
                     clean_reg_user = reg_user.strip()
                     clean_reg_pw = reg_pw.strip()
                     clean_reg_pw_confirm = reg_pw_confirm.strip()

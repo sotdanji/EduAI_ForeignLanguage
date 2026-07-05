@@ -6,7 +6,7 @@ def render_sidebar():
         st.markdown("### 👤 사용자 정보")
         username = st.session_state.get("username", "Unknown")
         st.write(f"환영합니다, **{username}**님!")
-        if st.button("로그아웃", use_container_width=True):
+        if st.button("로그아웃", use_container_width=True, help="현재 계정에서 로그아웃합니다."):
             st.session_state["logged_in"] = False
             st.session_state.pop("user_id", None)
             st.session_state.pop("username", None)
@@ -34,5 +34,5 @@ def render_sidebar():
         st.markdown("---")
         st.markdown("### ❓ 도움말")
         from app.ui.components.manual_dialog import show_manual
-        if st.button("📖 사용 설명서 보기", use_container_width=True):
+        if st.button("📖 사용 설명서 보기", use_container_width=True, help="앱의 기능과 사용 방법을 확인합니다."):
             show_manual()
