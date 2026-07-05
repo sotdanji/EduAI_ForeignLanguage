@@ -18,6 +18,7 @@ if "app.db.database" in sys.modules:
 from app.core.llm_engine import get_parsed_content_from_text, get_parsed_content_from_image, configure_gemini
 from app.ui.result_view import render_parsed_result
 from app.db.database import init_db, get_all_words, delete_word, add_passage, get_all_passages, get_passage_by_id, get_dashboard_stats, get_recent_pronunciation_scores, get_setting, set_setting
+from app.utils.qr import get_local_ip, generate_qr_code
 
 load_dotenv()
 configure_gemini()
@@ -153,6 +154,10 @@ def render_main_app():
                 if "extract_original" not in st.session_state:
                     val = get_setting("extract_original", "True")
                     st.session_state["extract_original"] = (val == "True")
+                if "translation_style" not in st.session_state:
+                    st.session_state["translation_style"] = get_setting("translation_style", "자연스러운 번역 (의역)")
+                if "translation_tone" not in st.session_state:
+                    st.session_state["translation_tone"] = get_setting("translation_tone", "경어체 (~해요)")
 
                 levels = [
                     "초등 1학년", "초등 2학년", "초등 3학년", "초등 4학년", "초등 5학년", "초등 6학년",
@@ -185,6 +190,23 @@ def render_main_app():
                     if new_extract != st.session_state["extract_original"]:
                         st.session_state["extract_original"] = new_extract
                         set_setting("extract_original", "True" if new_extract else "False")
+                        
+                st.markdown("---")
+                col_t1, col_t2 = st.columns(2)
+                with col_t1:
+                    style_opts = ["자연스러운 번역 (의역)", "직역 (문법 구조 파악용)"]
+                    curr_style_idx = style_opts.index(st.session_state["translation_style"]) if st.session_state["translation_style"] in style_opts else 0
+                    new_style = st.selectbox("🔤 번역 스타일", style_opts, index=curr_style_idx)
+                    if new_style != st.session_state["translation_style"]:
+                        st.session_state["translation_style"] = new_style
+                        set_setting("translation_style", new_style)
+                with col_t2:
+                    tone_opts = ["경어체 (~해요)", "평어체 (~한다)"]
+                    curr_tone_idx = tone_opts.index(st.session_state["translation_tone"]) if st.session_state["translation_tone"] in tone_opts else 0
+                    new_tone = st.selectbox("💬 번역 문체", tone_opts, index=curr_tone_idx)
+                    if new_tone != st.session_state["translation_tone"]:
+                        st.session_state["translation_tone"] = new_tone
+                        set_setting("translation_tone", new_tone)
 
             input_type = st.radio("입력 방식 선택", ["🖼️ 갤러리/스크린샷 업로드", "📸 카메라 촬영", "📝 텍스트 직접 입력"], horizontal=True, label_visibility="collapsed")
 
@@ -213,8 +235,8 @@ def render_main_app():
                         cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
 
                     if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True, help="클릭하면 선택된 영역에 대해 AI 분석이 시작됩니다."):
-                        with st.spinner(f"AI 선생님이 이미지를 분석하고 {target_language}로 변환하고 있습니다..."):
-                            parsed = get_parsed_content_from_image(cropped_img, extract_original_questions, student_level=st.session_state["student_level"], target_language=st.session_state["target_language"])
+                        with st.spinner(f"AI 선생님이 이미지를 분석하고 {st.session_state['target_language']}로 변환하고 있습니다..."):
+                            parsed = get_parsed_content_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
                             st.session_state["parsed_data"] = parsed
                             if parsed and "error" not in parsed:
                                 add_passage(parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
@@ -228,8 +250,8 @@ def render_main_app():
                         cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
 
                     if st.button("🚀 촬영 영역 분석 시작", key="btn_cam", use_container_width=True, help="클릭하면 촬영된 영역에 대해 AI 분석이 시작됩니다."):
-                        with st.spinner(f"AI 선생님이 이미지를 분석하고 {target_language}로 변환하고 있습니다..."):
-                            parsed = get_parsed_content_from_image(cropped_img, extract_original_questions, student_level=st.session_state["student_level"], target_language=st.session_state["target_language"])
+                        with st.spinner(f"AI 선생님이 이미지를 분석하고 {st.session_state['target_language']}로 변환하고 있습니다..."):
+                            parsed = get_parsed_content_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
                             st.session_state["parsed_data"] = parsed
                             if parsed and "error" not in parsed:
                                 add_passage(parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
@@ -238,8 +260,8 @@ def render_main_app():
                 input_text = st.text_area("외국어 텍스트 입력", height=200, placeholder="외국어 원문을 여기에 붙여넣으세요...")
                 if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True, help="클릭하면 입력된 텍스트에 대해 AI 분석이 시작됩니다."):
                     if input_text.strip():
-                        with st.spinner(f"AI 선생님이 텍스트를 분석하고 {target_language}로 변환하고 있습니다..."):
-                            parsed = get_parsed_content_from_text(input_text, extract_original_questions, student_level=st.session_state["student_level"], target_language=st.session_state["target_language"])
+                        with st.spinner(f"AI 선생님이 텍스트를 분석하고 {st.session_state['target_language']}로 변환하고 있습니다..."):
+                            parsed = get_parsed_content_from_text(input_text, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
                             st.session_state["parsed_data"] = parsed
                             if parsed and "error" not in parsed:
                                 add_passage(parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
@@ -360,4 +382,24 @@ else:
         if st.button("로그아웃", use_container_width=True):
             st.session_state["logged_in"] = False
             st.rerun()
+            
+        st.markdown("---")
+        st.markdown("### 📱 모바일/태블릿 연동")
+        st.write("스마트폰 카메라로 아래 QR을 스캔하면 현재 접속 중인 EduAI로 연결됩니다.")
+        
+        with st.popover("📱 태블릿 접속 QR 생성", use_container_width=True):
+            import os
+            public_url = os.getenv("PUBLIC_URL")
+            if public_url:
+                url = public_url
+            else:
+                local_ip = get_local_ip()
+                port = 8501 # Streamlit 기본 포트
+                url = f"http://{local_ip}:{port}"
+            
+            st.write("QR 코드를 카메라로 스캔하세요:")
+            qr_img = generate_qr_code(url)
+            st.image(qr_img, use_container_width=True)
+            st.info(f"수동 접속 주소:\n{url}")
+            
     render_main_app()

@@ -75,7 +75,7 @@ RESPONSE_SCHEMA = {
     "required": ["source_language", "target_language", "title", "type", "contents", "vocabulary", "original_questions", "tutor_feedback"]
 }
 
-def get_parsed_content_from_text(text: str, extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어") -> Dict[str, Any]:
+def get_parsed_content_from_text(text: str, extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
     """텍스트를 입력받아 파싱된 JSON 객체를 반환합니다."""
     
     original_questions_instruction = (
@@ -85,13 +85,26 @@ def get_parsed_content_from_text(text: str, extract_original_questions: bool = T
         "'original_questions' 배열은 빈 배열([])로 반환하세요. 텍스트 내에 연습문제가 있어도 무시하세요."
     )
     
+    style_instruction = (
+        "**[자연스러운 번역]** 번역 시 AI 특유의 기계적이고 딱딱한 번역투를 절대 사용하지 마세요. 마치 원어민이 일상에서 대화하듯 매우 자연스럽고 생동감 넘치는 어휘와 표현으로 번역하세요."
+        if "자연스러운" in translation_style else
+        "**[문법 중심 직역]** 학생이 외국어 문장 구조와 문법을 명확히 파악할 수 있도록, 의역을 배제하고 원래의 어순과 뼈대를 최대한 살려 직역하세요."
+    )
+    
+    tone_instruction = (
+        "**[경어체 사용]** 전체적인 문맥이나 해설, 일반 독해 지문 번역 시 '~해요', '~습니다' 등 친절하고 다정한 존댓말을 기본으로 사용하세요."
+        if "경어체" in translation_tone else
+        "**[평어체 사용]** 전체적인 문맥이나 해설, 일반 독해 지문 번역 시 '~한다', '~이다' 등 교과서나 일기장처럼 평범한 반말을 기본으로 사용하세요."
+    )
+    
     prompt = f"""
     당신은 엘리트 외국어 선생님입니다. 
     현재 지도하는 학생의 수준은 '{student_level}'입니다.
     아래 텍스트를 분석하세요.
-    1. '원본 텍스트'만 추출하여 문장 단위로 분할(contents)하고, '{target_language}'(으)로 자연스럽게 번역하세요. 만약 원본과 '{target_language}'이(가) 동일하다면 번역 대신 원문을 문맥에 맞게 다듬어 제공하세요.
-       **[I'm not AI 번역 스킬 적용]** 번역 시 AI 특유의 기계적이고 딱딱한 번역투를 절대 사용하지 마세요. 마치 원어민이 일상에서 대화하듯 매우 자연스럽고 생동감 넘치는 어휘와 표현으로 번역하세요.
-       **[어조 일관성 유지]** 대화문일 경우, 전체 문맥을 먼저 파악하여 화자와 청자의 최종적인 관계(예: 친구, 사제지간, 어른과 아이 등)를 파악하세요. 각 등장인물별로 상대방에게 쓰는 어조(존댓말 또는 반말)를 관계에 맞게 결정하고, 해당 인물이 그 상대방에게 말할 때는 처음부터 끝까지 일관된 어조를 유지하세요. 예를 들어 어른은 아이에게 반말, 아이는 어른에게 존댓말을 쓰며, 서로 또래 친구라면 둘 다 처음부터 끝까지 반말로 번역해야 합니다. 대화 도중 정체를 깨닫거나 상황이 변하더라도 처음 선택한 각 화자의 어조를 절대 바꾸지 마세요.
+    1. '원본 텍스트'만 추출하여 문장 단위로 분할(contents)하고, '{target_language}'(으)로 번역하세요. 만약 원본과 '{target_language}'이(가) 동일하다면 번역 대신 원문을 문맥에 맞게 다듬어 제공하세요.
+       {style_instruction}
+       {tone_instruction}
+       **[대화문 어조 예외 처리]** 대화문(A: 안녕? B: 어)일 경우, 전체 문맥을 먼저 파악하여 화자와 청자의 최종적인 관계(예: 친구, 사제지간, 어른과 아이 등)를 파악하세요. 각 등장인물별로 상대방에게 쓰는 어조(존댓말 또는 반말)를 관계에 맞게 결정하고 일관성을 유지하세요. 이 경우에는 위의 [경어체/평어체] 기본 설정보다 **등장인물 간의 관계**를 무조건 최우선으로 반영해야 합니다.
        화자를 분석하여 'speaker_gender'를 'male', 'female', 'neutral'(해설자 등) 중 하나로 정확히 매핑하세요. 대화문일 경우 인물의 이름이나 문맥을 통해 성별을 추론하세요.
     2. {original_questions_instruction}
     3. 중요 어휘 5개를 추출하세요. 추출 시 반드시 '{student_level}' 수준에 맞는 어휘를 우선적으로 타겟팅하세요.
@@ -119,7 +132,7 @@ def get_parsed_content_from_text(text: str, extract_original_questions: bool = T
     except Exception as e:
         return {"error": str(e), "raw_response": getattr(response, 'text', '') if 'response' in locals() else ''}
 
-def get_parsed_content_from_image(image_part, extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어") -> Dict[str, Any]:
+def get_parsed_content_from_image(image_part, extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
     """이미지 객체를 입력받아 파싱된 JSON 객체를 반환합니다."""
     
     original_questions_instruction = (
@@ -129,13 +142,26 @@ def get_parsed_content_from_image(image_part, extract_original_questions: bool =
         "'original_questions' 배열은 빈 배열([])로 반환하세요. 이미지 내에 연습문제가 있어도 무시하세요."
     )
     
+    style_instruction = (
+        "**[자연스러운 번역]** 번역 시 AI 특유의 기계적이고 딱딱한 번역투를 절대 사용하지 마세요. 마치 원어민이 일상에서 대화하듯 매우 자연스럽고 생동감 넘치는 어휘와 표현으로 번역하세요."
+        if "자연스러운" in translation_style else
+        "**[문법 중심 직역]** 학생이 외국어 문장 구조와 문법을 명확히 파악할 수 있도록, 의역을 배제하고 원래의 어순과 뼈대를 최대한 살려 직역하세요."
+    )
+    
+    tone_instruction = (
+        "**[경어체 사용]** 전체적인 문맥이나 해설, 일반 독해 지문 번역 시 '~해요', '~습니다' 등 친절하고 다정한 존댓말을 기본으로 사용하세요."
+        if "경어체" in translation_tone else
+        "**[평어체 사용]** 전체적인 문맥이나 해설, 일반 독해 지문 번역 시 '~한다', '~이다' 등 교과서나 일기장처럼 평범한 반말을 기본으로 사용하세요."
+    )
+    
     prompt = f"""
     당신은 엘리트 외국어 선생님입니다. 
     현재 지도하는 학생의 수준은 '{student_level}'입니다.
     제공된 교재 이미지를 분석하세요.
     1. 원본 본문(Reading)이나 대화문(Dialogue) 부분만 추출하여 문장 단위로 분할(contents)하고 '{target_language}'(으)로 번역하세요. 만약 원본과 '{target_language}'이(가) 동일하다면 번역 대신 원문을 문맥에 맞게 다듬어 제공하세요. 페이지 번호 등은 무시하세요.
-       **[I'm not AI 번역 스킬 적용]** 번역 시 AI 특유의 기계적이고 딱딱한 번역투를 절대 사용하지 마세요. 마치 원어민이 일상에서 대화하듯 매우 자연스럽고 생동감 넘치는 어휘와 표현으로 번역하세요.
-       **[어조 일관성 유지]** 대화문일 경우, 전체 문맥을 먼저 파악하여 화자와 청자의 최종적인 관계(예: 친구, 사제지간, 어른과 아이 등) 파악하세요. 각 등장인물별로 상대방에게 쓰는 어조(존댓말 또는 반말)를 관계에 맞게 결정하고, 해당 인물이 그 상대방에게 말할 때는 처음부터 끝까지 일관된 어조를 유지하세요.
+       {style_instruction}
+       {tone_instruction}
+       **[대화문 어조 예외 처리]** 대화문일 경우, 전체 문맥을 먼저 파악하여 화자와 청자의 최종적인 관계(예: 친구, 사제지간, 어른과 아이 등) 파악하세요. 각 등장인물별로 상대방에게 쓰는 어조(존댓말 또는 반말)를 관계에 맞게 결정하고 일관성을 유지하세요. 이 경우에는 위의 [경어체/평어체] 기본 설정보다 **등장인물 간의 관계**를 무조건 최우선으로 반영해야 합니다.
        화자를 분석하여 'speaker_gender'를 'male', 'female', 'neutral'(해설자 등) 중 하나로 정확히 매핑하세요.
     2. {original_questions_instruction}
     3. 중요 어휘 5개를 추출하세요. 추출 시 반드시 '{student_level}' 수준에 맞는 어휘를 우선적으로 타겟팅하세요.

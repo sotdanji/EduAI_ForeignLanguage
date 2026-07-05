@@ -67,6 +67,51 @@ def render_parsed_result(data: Dict[str, Any]):
         audio_b64_source_list = data["audio_b64_source_list"]
         audio_b64_target_list = data["audio_b64_target_list"]
 
+        edit_mode = st.toggle("✏️ 본문 문장 수정 모드")
+        
+        if edit_mode:
+            st.info("문장을 수정하고 엔터를 치면, 해당 문장의 발음 오디오가 즉시 재생성됩니다.")
+            for i, line in enumerate(contents):
+                st.markdown(f"**[{i+1}번 문장]**")
+                
+                # 원문 수정
+                old_src = line.get("source_text", "")
+                new_src = st.text_input("원문", value=old_src, key=f"edit_src_{i}")
+                if new_src != old_src:
+                    data["contents"][i]["source_text"] = new_src
+                    source_lang = data.get("source_language", "en")
+                    voice = get_voice_for_language(source_lang, gender=current_gender)
+                    with st.spinner("원문 오디오 재생성 중..."):
+                        if new_src.strip():
+                            try:
+                                audio_bytes = generate_audio_sync(new_src, voice)
+                                data["audio_b64_source_list"][i] = base64.b64encode(audio_bytes).decode('utf-8')
+                            except:
+                                data["audio_b64_source_list"][i] = ""
+                        else:
+                            data["audio_b64_source_list"][i] = ""
+                    st.rerun()
+
+                # 번역문 수정
+                old_tgt = line.get("target_text", "")
+                new_tgt = st.text_input("번역문", value=old_tgt, key=f"edit_tgt_{i}")
+                if new_tgt != old_tgt:
+                    data["contents"][i]["target_text"] = new_tgt
+                    target_lang = data.get("target_language", "ko")
+                    voice = get_voice_for_language(target_lang, gender=current_gender)
+                    with st.spinner("번역문 오디오 재생성 중..."):
+                        if new_tgt.strip():
+                            try:
+                                audio_bytes = generate_audio_sync(new_tgt, voice)
+                                data["audio_b64_target_list"][i] = base64.b64encode(audio_bytes).decode('utf-8')
+                            except:
+                                data["audio_b64_target_list"][i] = ""
+                        else:
+                            data["audio_b64_target_list"][i] = ""
+                    st.rerun()
+                st.markdown("---")
+            return # 수정 모드일 때는 아래 HTML 플레이어를 그리지 않음
+
         html_content = f"""
         <div style="display: flex; flex-direction: column; height: 100vh; margin: 0; padding: 0;">
             <div id="sticky-header" style="flex: 0 0 auto; background: white; z-index: 100; padding: 10px; border-bottom: 1px solid #e6e6e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px;">
@@ -88,6 +133,10 @@ def render_parsed_result(data: Dict[str, Any]):
                             <strong style="width: 35px; color:#555;">표시:</strong>
                             <label style="cursor:pointer; white-space: nowrap;"><input type="checkbox" id="show-src" checked onchange="updateDisplay()"> 원문 보기</label>
                             <label style="cursor:pointer; white-space: nowrap;"><input type="checkbox" id="show-tgt" checked onchange="updateDisplay()"> 번역(작문) 보기</label>
+                        </div>
+                        <div style="display: flex; gap: 12px; align-items: center; margin-top: 5px;">
+                            <strong style="width: 35px; color:#555;">훈련:</strong>
+                            <label style="cursor:pointer; white-space: nowrap; color: #d32f2f; font-weight: bold;"><input type="checkbox" id="blind-mode" onchange="toggleBlindMode()"> 🎧 블라인드 모드 (듣기 평가)</label>
                         </div>
                     </div>
                     
@@ -197,6 +246,19 @@ def render_parsed_result(data: Dict[str, Any]):
                 updateHighlights();
             }}
             
+            function toggleBlindMode() {{
+                const isBlind = document.getElementById("blind-mode").checked;
+                const container = document.getElementById("tts-text-container");
+                if (isBlind) {{
+                    container.style.filter = "blur(8px)";
+                    container.style.opacity = "0.7";
+                    container.style.pointerEvents = "none";
+                }} else {{
+                    container.style.filter = "none";
+                    container.style.opacity = "1";
+                    container.style.pointerEvents = "auto";
+                }}
+            }}
             // Load settings from localStorage
             function loadSettings() {{
                 const savedMode = localStorage.getItem("eduai_textMode");
