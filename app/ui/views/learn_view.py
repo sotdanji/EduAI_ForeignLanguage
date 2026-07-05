@@ -28,6 +28,9 @@ def render_learn_view():
                 st.session_state["translation_style"] = get_setting(st.session_state["user_id"], "translation_style", "자연스러운 번역 (의역)")
             if "translation_tone" not in st.session_state:
                 st.session_state["translation_tone"] = get_setting(st.session_state["user_id"], "translation_tone", "경어체 (~해요)")
+            if "ai_data_consent" not in st.session_state:
+                val = get_setting(st.session_state["user_id"], "ai_data_consent", "False")
+                st.session_state["ai_data_consent"] = (val == "True")
 
             levels = [
                 "초등 1학년", "초등 2학년", "초등 3학년", "초등 4학년", "초등 5학년", "초등 6학년",
@@ -55,9 +58,13 @@ def render_learn_view():
                         tts_gender_kr = st.radio("🗣️ 성우 선택", ["남성", "여성"], horizontal=True, index=curr_gender_idx)
                         new_gender = "male" if tts_gender_kr == "남성" else "female"
                     with col_s2:
-                        new_extract = st.toggle("원문 연습문제 추출", value=st.session_state["extract_original"])
+                        new_extract = st.toggle("본문 연습문제 추출", value=st.session_state["extract_original"])
                             
                     st.markdown("---")
+                    st.markdown("##### 🤝 데이터 공유 설정")
+                    st.info("개인 발음 점수 등 민감 정보를 제외한 학습 지문 원문(텍스트/이미지)을 AI 성능 향상 연구에 제공하는 것에 동의합니다.")
+                    new_ai_consent = st.toggle("AI 학습용 익명 데이터 제공 동의", value=st.session_state["ai_data_consent"])
+
                     col_t1, col_t2 = st.columns(2)
                     with col_t1:
                         style_opts = ["자연스러운 번역 (의역)", "직역 (문법 구조 파악용)"]
@@ -75,15 +82,17 @@ def render_learn_view():
                 set_setting(st.session_state["user_id"], "extract_original", "True" if new_extract else "False")
                 set_setting(st.session_state["user_id"], "translation_style", new_style)
                 set_setting(st.session_state["user_id"], "translation_tone", new_tone)
+                set_setting(st.session_state["user_id"], "ai_data_consent", "True" if new_ai_consent else "False")
                 st.session_state["student_level"] = new_student_level
                 st.session_state["target_language"] = new_target_language
                 st.session_state["tts_gender"] = new_gender
                 st.session_state["extract_original"] = new_extract
                 st.session_state["translation_style"] = new_style
                 st.session_state["translation_tone"] = new_tone
+                st.session_state["ai_data_consent"] = new_ai_consent
                 st.success("설정이 저장되었습니다!")
 
-        input_type = st.radio("입력 방식 선택", ["🖼️ 갤러리/스크린샷 업로드", "📸 카메라 촬영", "📝 텍스트 직접 입력"], horizontal=True, label_visibility="collapsed")
+        input_type = st.radio("입력 방식 선택", ["🖼️ 갤러리/스크린샷 업로드", "📸 카메라 촬영", "📝 텍스트 직접 입력", "📂 공유된 파일 들여오기"], horizontal=True, label_visibility="collapsed")
 
         if input_type == "🖼️ 갤러리/스크린샷 업로드":
             uploaded_image = st.file_uploader("스크린샷 또는 사진 파일 업로드 (JPG, PNG)", type=["jpg", "jpeg", "png"])
@@ -113,7 +122,7 @@ def render_learn_view():
                                 add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
                         st.rerun()
 
-        else:
+        elif input_type == "📝 텍스트 직접 입력":
             input_text = st.text_area("외국어 텍스트 입력", height=200)
             if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True):
                 if input_text.strip():
@@ -124,6 +133,22 @@ def render_learn_view():
                             if st.session_state.get("switch_to_tab1") is None:
                                 add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
                         st.rerun()
+
+        elif input_type == "📂 공유된 파일 들여오기":
+            uploaded_json = st.file_uploader("친구가 공유한 EduAI JSON 파일 업로드", type=["json"])
+            if uploaded_json:
+                try:
+                    import json
+                    parsed = json.load(uploaded_json)
+                    if "title" in parsed and "sentences" in parsed:
+                        if st.button("🚀 이 지문으로 학습 시작하기", use_container_width=True):
+                            st.session_state["parsed_data"] = parsed
+                            add_passage(st.session_state["user_id"], parsed.get('title', '공유된 지문'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                            st.rerun()
+                    else:
+                        st.error("올바른 EduAI 지문 공유 파일이 아닙니다.")
+                except Exception as e:
+                    st.error(f"파일을 읽는 중 오류가 발생했습니다: {e}")
 
     else:
         col_h1, col_h2 = st.columns([1, 2.5])
