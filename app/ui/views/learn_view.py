@@ -2,7 +2,7 @@ import streamlit as st
 import PIL.Image
 from streamlit_cropper import st_cropper
 from app.agents import parser_agent
-from app.db.database import get_setting, set_setting, add_passage
+from app.db.database import get_setting, set_setting, add_passage, check_passage_title_exists
 from app.ui.result_view import render_parsed_result
 
 def render_learn_view():
@@ -94,19 +94,31 @@ def render_learn_view():
 
         input_type = st.radio("입력 방식 선택", ["🖼️ 갤러리/스크린샷 업로드", "📸 카메라 촬영", "📝 텍스트 직접 입력", "📂 공유된 파일 들여오기"], horizontal=True, label_visibility="collapsed")
 
+        custom_title = ""
+        if input_type != "📂 공유된 파일 들여오기":
+            st.info("지문을 나중에 쉽게 찾을 수 있도록 단원명이나 교재명 등을 제목으로 지정해주세요.")
+            custom_title = st.text_input("지문 제목 지정 (필수, 예: 3학년 영어 1단원)")
+
         if input_type == "🖼️ 갤러리/스크린샷 업로드":
             uploaded_image = st.file_uploader("스크린샷 또는 사진 파일 업로드 (JPG, PNG)", type=["jpg", "jpeg", "png"])
             if uploaded_image:
                 img = PIL.Image.open(uploaded_image)
                 cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
                 if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True):
-                    with st.spinner("AI 분석 중..."):
-                        parsed = parser_agent.parse_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                        st.session_state["parsed_data"] = parsed
-                        if parsed and "error" not in parsed:
-                            if st.session_state.get("switch_to_tab1") is None: # Prevent duplicate insertion
-                                add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
-                        st.rerun()
+                    if not custom_title.strip():
+                        st.error("지문 제목을 입력해주세요.")
+                    elif check_passage_title_exists(st.session_state["user_id"], custom_title.strip()):
+                        st.error(f"이미 '{custom_title.strip()}' 제목으로 시작하는 지문이 있습니다. 다른 제목으로 수정해주세요.")
+                    else:
+                        with st.spinner("AI 분석 중..."):
+                            parsed = parser_agent.parse_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
+                            st.session_state["parsed_data"] = parsed
+                            if parsed and "error" not in parsed:
+                                if st.session_state.get("switch_to_tab1") is None: # Prevent duplicate insertion
+                                    first_sentence = parsed.get('title', '제목 없음')
+                                    final_title = f"{custom_title.strip()}_{first_sentence}"
+                                    add_passage(st.session_state["user_id"], final_title, parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                            st.rerun()
 
         elif input_type == "📸 카메라 촬영":
             camera_image = st.camera_input("카메라로 교재 촬영")
@@ -114,25 +126,39 @@ def render_learn_view():
                 img = PIL.Image.open(camera_image)
                 cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
                 if st.button("🚀 촬영 영역 분석 시작", key="btn_cam", use_container_width=True):
-                    with st.spinner("AI 분석 중..."):
-                        parsed = parser_agent.parse_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                        st.session_state["parsed_data"] = parsed
-                        if parsed and "error" not in parsed:
-                            if st.session_state.get("switch_to_tab1") is None:
-                                add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
-                        st.rerun()
+                    if not custom_title.strip():
+                        st.error("지문 제목을 입력해주세요.")
+                    elif check_passage_title_exists(st.session_state["user_id"], custom_title.strip()):
+                        st.error(f"이미 '{custom_title.strip()}' 제목으로 시작하는 지문이 있습니다. 다른 제목으로 수정해주세요.")
+                    else:
+                        with st.spinner("AI 분석 중..."):
+                            parsed = parser_agent.parse_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
+                            st.session_state["parsed_data"] = parsed
+                            if parsed and "error" not in parsed:
+                                if st.session_state.get("switch_to_tab1") is None:
+                                    first_sentence = parsed.get('title', '제목 없음')
+                                    final_title = f"{custom_title.strip()}_{first_sentence}"
+                                    add_passage(st.session_state["user_id"], final_title, parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                            st.rerun()
 
         elif input_type == "📝 텍스트 직접 입력":
             input_text = st.text_area("외국어 텍스트 입력", height=200)
             if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True):
                 if input_text.strip():
-                    with st.spinner("AI 분석 중..."):
-                        parsed = parser_agent.parse_from_text(input_text, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                        st.session_state["parsed_data"] = parsed
-                        if parsed and "error" not in parsed:
-                            if st.session_state.get("switch_to_tab1") is None:
-                                add_passage(st.session_state["user_id"], parsed.get('title', '제목 없음'), parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
-                        st.rerun()
+                    if not custom_title.strip():
+                        st.error("지문 제목을 입력해주세요.")
+                    elif check_passage_title_exists(st.session_state["user_id"], custom_title.strip()):
+                        st.error(f"이미 '{custom_title.strip()}' 제목으로 시작하는 지문이 있습니다. 다른 제목으로 수정해주세요.")
+                    else:
+                        with st.spinner("AI 분석 중..."):
+                            parsed = parser_agent.parse_from_text(input_text, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
+                            st.session_state["parsed_data"] = parsed
+                            if parsed and "error" not in parsed:
+                                if st.session_state.get("switch_to_tab1") is None:
+                                    first_sentence = parsed.get('title', '제목 없음')
+                                    final_title = f"{custom_title.strip()}_{first_sentence}"
+                                    add_passage(st.session_state["user_id"], final_title, parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                            st.rerun()
 
         elif input_type == "📂 공유된 파일 들여오기":
             uploaded_json = st.file_uploader("친구가 공유한 EduAI JSON 파일 업로드", type=["json"])

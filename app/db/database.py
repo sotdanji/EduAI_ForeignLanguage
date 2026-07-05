@@ -156,6 +156,10 @@ def delete_word(user_id: int, vocab_id: int):
     execute_query("DELETE FROM vocabularies WHERE id = ? AND user_id = ?", (vocab_id, user_id), commit=True)
 
 # --- 지문(서재) 관리 ---
+def check_passage_title_exists(user_id: int, prefix: str) -> bool:
+    row = execute_query("SELECT 1 FROM passages WHERE user_id = ? AND title LIKE ? LIMIT 1", (user_id, prefix + "_%"), fetch="one")
+    return bool(row)
+
 def add_passage(user_id: int, title: str, p_type: str, source_lang: str, target_lang: str, raw_json: dict) -> int:
     return execute_query(
         "INSERT INTO passages (user_id, title, type, source_language, target_language, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
