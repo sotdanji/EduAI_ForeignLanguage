@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 # 내부 AI 엔진 임포트
-from app.core.llm_engine import get_parsed_content_from_text, get_parsed_content_from_image, configure_gemini
+from app.agents import parser_agent, configure_gemini
 
 # 환경변수 로드 및 AI 엔진 초기화
 load_dotenv()
@@ -38,7 +38,7 @@ async def parse_text(request: TextParseRequest):
         raise HTTPException(status_code=400, detail="텍스트가 비어 있습니다.")
     
     try:
-        result = get_parsed_content_from_text(request.text, request.generate_ai_quiz)
+        result = parser_agent.parse_from_text(request.text, extract_original_questions=request.generate_ai_quiz)
         if "error" in result:
             raise HTTPException(status_code=500, detail=result["error"])
         return result
@@ -55,7 +55,7 @@ async def parse_image(file: UploadFile = File(...), generate_ai_quiz: bool = For
         contents = await file.read()
         image = PIL.Image.open(io.BytesIO(contents))
         
-        result = get_parsed_content_from_image(image, generate_ai_quiz)
+        result = parser_agent.parse_from_image(image, extract_original_questions=generate_ai_quiz)
         if "error" in result:
             raise HTTPException(status_code=500, detail=result["error"])
         return result

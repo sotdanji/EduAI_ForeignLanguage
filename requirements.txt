@@ -9,3 +9,5 @@ python-multipart
 streamlit-cropper
 qrcode[pil]
 psycopg2-binary==2.9.9
+edge-tts
+tenacity

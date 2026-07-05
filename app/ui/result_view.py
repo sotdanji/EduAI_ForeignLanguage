@@ -838,7 +838,8 @@ def render_parsed_result(data: Dict[str, Any]):
                         ahash = hash(audio_bytes)
                         skey_res = f"shadow_res_{selected_idx}"
                         if st.session_state.get(f"ahash_{skey_res}") != ahash:
-                            res = evaluate_pronunciation(audio_bytes, target_text, source_lang)
+                            from app.agents import pronunciation_agent
+                            res = pronunciation_agent.evaluate_pronunciation(audio_bytes, target_text, source_lang)
                             st.session_state[f"ahash_{skey_res}"] = ahash
                             st.session_state[skey_res] = res
                             add_pronunciation_score(st.session_state["user_id"], target_text, res.get('score', 0))
@@ -856,79 +857,6 @@ def render_parsed_result(data: Dict[str, Any]):
 
     st.markdown("---")
 
-    # 4. 단어장
-    st.subheader("📚 핵심 어휘")
-    vocab = data.get("vocabulary", [])
-    if vocab:
-        from app.db.database import add_word
-        for i, v in enumerate(vocab):
-            word = v.get('word', '')
-            meaning = v.get('meaning', '')
-            col_v1, col_v2 = st.columns([4, 1])
-            with col_v1:
-                st.markdown(f"- **{word}**: {meaning}")
-            with col_v2:
-                if st.button("➕ 단어장에 저장", key=f"save_vocab_{i}_{word}"):
-                    success = add_word(st.session_state["user_id"], word, meaning)
-                    if success:
-                        st.toast(f"'{word}' 단어장에 저장 완료! 🎉")
-                    else:
-                        st.toast(f"'{word}' 이미 단어장에 있습니다.", icon="⚠️")
-    else:
-        st.info("단어장 데이터가 없습니다.")
-            
-    st.markdown("---")
-
-    # 5. 기존 교재 문제 (original_questions)
-    original_questions = data.get("original_questions", [])
-    if original_questions:
-        st.subheader("원본 교재 문제")
-        for i, q in enumerate(original_questions):
-            st.markdown(f"**Q{i+1}. {q.get('question_text', '')}**")
-            options = q.get("options", [])
-            if options:
-                for j, opt in enumerate(options):
-                    st.markdown(f"({j+1}) {opt}")
-            st.write("") # 간격
-    
-    st.markdown("---")
-    st.subheader("💬 AI 튜터와 대화하기 (Q&A & 인터뷰)")
-    
-    # 대화 모드 선택
-    chat_mode_label = st.radio("선생님 역할 선택", ["일반 Q&A 모드 (학생이 질문하기)", "AI 주도 인터뷰 모드 (선생님이 질문하기)"], horizontal=True)
-    mode_key = "qa" if "일반" in chat_mode_label else "interview"
-    
-    # 모드가 변경되었으면 채팅 기록 리셋
-    if st.session_state.get("current_chat_mode") != mode_key:
-        st.session_state.current_chat_mode = mode_key
-        if mode_key == "qa":
-            st.session_state.chat_history = [{"role": "assistant", "content": "학습하시다가 모르는 문법이나 단어가 있다면 언제든 편하게 물어보세요!"}]
-        else:
-            st.session_state.chat_history = [{"role": "assistant", "content": "지금부터 본문 내용에 대한 인터뷰를 시작하겠습니다. 지문 내용을 잘 이해했는지 확인하기 위해 제가 날카로운 질문을 드릴 테니, 마음의 준비가 되셨다면 '시작'이라고 대답해 주세요!"}]
-    
-    # 입출력 모드 선택 토글
-    col_chat1, col_chat2 = st.columns([1, 1])
-    with col_chat1:
-        st.caption("마이크를 사용할 수 없을 때는 하단의 입력창을 이용하세요.")
-    with col_chat2:
-        voice_reply_mode = st.toggle("🔊 AI 선생님 답변을 음성으로 듣기", value=False)
-
-    # 기존 채팅 내역 출력
-    for msg in st.session_state.chat_history:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-            if "audio_b64" in msg and msg["audio_b64"]:
-                st.audio(base64.b64decode(msg["audio_b64"]), format="audio/mp3")
-                
-    # 입력 인터페이스
-    user_query = st.chat_input("질문을 텍스트로 입력해주세요...")
-    audio_value = None
-    if hasattr(st, "audio_input"):
-        audio_value = st.audio_input("🎤 마이크로 질문하기", key="chat_audio_input")
-        
-    processed_query = None
-    
-    # 오디오 중복 처리 방지 (Streamlit 특성)
     if audio_value and st.session_state.get("last_audio_id") != audio_value.file_id:
         st.session_state.last_audio_id = audio_value.file_id
         with st.spinner("음성을 인식하고 있습니다..."):
