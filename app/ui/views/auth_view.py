@@ -3,7 +3,7 @@ from app.db.database import authenticate_user, register_user
 
 def render_auth_view():
     st.markdown("<h1 style='text-align: center; color: #4A90E2;'>🚀 EduAI에 오신 것을 환영합니다!</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center;'>찍고, 듣고, 말하는 나만의 꼬마 AI 외국어 선생님</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>찍고, 듣고, 말하는 EduAI 나의 창의적 학습 도우미 외국어 선생님</h3>", unsafe_allow_html=True)
     st.markdown("---")
     
     col1, col2 = st.columns([1.5, 1], gap="large")

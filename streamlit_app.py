@@ -46,7 +46,7 @@ if not st.session_state["logged_in"]:
 else:
     render_sidebar()
     
-    st.title("🏫 EduAI 나만의 꼬마 외국어 선생님")
+    st.title("🏫 EduAI 나의 창의적 학습 도우미 외국어 선생님")
     
     tab1, tab2, tab3 = st.tabs(["📚 학습하기", "📝 나의 서재 (복습)", "📊 학습 대시보드"])
     
