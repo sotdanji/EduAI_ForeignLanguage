@@ -35,13 +35,16 @@ def render_auth_view():
                 st.subheader("로그인")
                 login_user = st.text_input("아이디", key="login_user")
                 login_pw = st.text_input("비밀번호", type="password", key="login_pw")
-                if st.button("🚀 로그인", use_container_width=True):
-                    user_id = authenticate_user(login_user, login_pw)
+                if st.button("🔓 로그인", use_container_width=True):
+                    # 엔터키 등으로 인한 공백/줄바꿈 문자 제거
+                    clean_user = login_user.strip()
+                    clean_pw = login_pw.strip()
+                    user_id = authenticate_user(clean_user, clean_pw)
                     if user_id:
                         st.session_state["logged_in"] = True
                         st.session_state["user_id"] = user_id
-                        st.session_state["username"] = login_user
-                        st.toast("로그인 성공!", icon="✅")
+                        st.session_state["username"] = clean_user
+                        st.toast("로그인 성공!", icon="🎉")
                         st.rerun()
                     else:
                         st.error("아이디 또는 비밀번호가 올바르지 않습니다.")
@@ -52,14 +55,18 @@ def render_auth_view():
                 reg_pw = st.text_input("새 비밀번호", type="password", key="reg_pw")
                 reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm")
                 
-                if st.button("✨ 가입하기", use_container_width=True):
-                    if not reg_user or not reg_pw:
+                if st.button("📝 가입하기", use_container_width=True):
+                    clean_reg_user = reg_user.strip()
+                    clean_reg_pw = reg_pw.strip()
+                    clean_reg_pw_confirm = reg_pw_confirm.strip()
+                    
+                    if not clean_reg_user or not clean_reg_pw:
                         st.error("아이디와 비밀번호를 모두 입력해주세요.")
-                    elif reg_pw != reg_pw_confirm:
+                    elif clean_reg_pw != clean_reg_pw_confirm:
                         st.error("비밀번호가 일치하지 않습니다.")
                     else:
-                        new_user_id = register_user(reg_user, reg_pw)
+                        new_user_id = register_user(clean_reg_user, clean_reg_pw)
                         if new_user_id:
                             st.success("회원가입이 완료되었습니다! 로그인 탭에서 로그인해주세요.")
                         else:
-                            st.error("이미 존재하는 아이디거나 오류가 발생했습니다.")
+                            st.error("이미 존재하는 아이디이거나 오류가 발생했습니다.")
