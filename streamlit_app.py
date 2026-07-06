@@ -52,6 +52,18 @@ else:
     
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["📷 원문 입력/분석", "📚 학습하기", "📖 지문 서재", "🔤 나만의 단어장", "📊 학습 대시보드"])
     
+    if st.session_state.get("switch_to_tab1", False):
+        import streamlit.components.v1 as components
+        components.html("""
+            <script>
+                var tabs = window.parent.document.querySelectorAll('button[data-baseweb="tab"]');
+                if (tabs.length > 1) {
+                    tabs[1].click();
+                }
+            </script>
+        """, height=0)
+        st.session_state["switch_to_tab1"] = False
+
     with tab1:
         render_input_view()
         
