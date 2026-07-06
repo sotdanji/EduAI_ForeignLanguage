@@ -214,7 +214,7 @@ def render_input_view():
             
             col1, col2 = st.columns(2)
             with col1:
-                doc_type_val = st.session_state["extracted_doc_type"]
+                doc_type_val = doc_type
                 if doc_type_val in ["test_paper", "handout"]:
                     button_label = "🚀 2단계: 저장 및 학습하기로 이동"
                 else:
