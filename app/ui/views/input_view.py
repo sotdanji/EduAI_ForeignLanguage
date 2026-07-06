@@ -197,6 +197,11 @@ def render_input_view():
                     st.rerun()
         else:
             st.markdown("### 🔍 1단계 완료: 추출된 원문 확인 및 편집")
+            
+            # AI가 추출한(또는 사용자가 입력했던) 제목을 보여주고 수정할 수 있게 제공
+            extracted_title = st.session_state.get("extracted_custom_title", "")
+            edited_title = st.text_input("추출된 문서 제목 (수정 가능)", value=extracted_title)
+            
             st.info("아래 텍스트 창에서 오류를 직접 수정하거나 불필요한 내용(페이지 번호 등)을 삭제하세요.")
             edited_text = st.text_area("추출된 원문", value=st.session_state["extracted_raw_text"], height=300)
             
@@ -205,7 +210,7 @@ def render_input_view():
                 if st.button("🚀 2단계: 텍스트 편집 완료 및 심층 분석 시작", use_container_width=True):
                     with st.spinner("AI 번역 및 심층 분석 중..."):
                         parsed = parser_agent.parse_from_text(edited_text, doc_type=st.session_state["extracted_doc_type"], extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                        handle_analysis(parsed, st.session_state["extracted_custom_title"], st.session_state["extracted_doc_type"], st.session_state["extracted_do_merge"])
+                        handle_analysis(parsed, edited_title, st.session_state["extracted_doc_type"], st.session_state["extracted_do_merge"])
                         if "extracted_raw_text" in st.session_state:
                             del st.session_state["extracted_raw_text"]
                             del st.session_state["extracted_doc_type"]
