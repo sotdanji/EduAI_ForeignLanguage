@@ -128,6 +128,7 @@ def render_input_view():
                 add_passage(st.session_state["user_id"], final_title, final_data.get('type', 'reading'), final_data.get('source_language', 'en'), final_data.get('target_language', 'ko'), final_data)
             st.session_state['switch_to_tab1'] = True
             st.session_state["merge_buffer"] = None
+            st.session_state['uploader_key'] += 1
         else:
             st.success("현재 페이지가 병합 대기열에 추가되었습니다. 다음 페이지를 분석해주세요.")
         st.rerun()
@@ -241,10 +242,11 @@ def render_input_view():
             with col2:
                 if st.button("❌ 취소 및 다시 추출", use_container_width=True):
                     del st.session_state["extracted_raw_text"]
+                    st.session_state['uploader_key'] += 1
                     st.rerun()
 
     if input_type == "📁 스크린샷 또는 사진 파일 업로드":
-        uploaded_image = st.file_uploader("파일 업로드", type=["png", "jpg", "jpeg", "pdf"])
+        uploaded_image = st.file_uploader("파일 업로드", type=["png", "jpg", "jpeg", "pdf"], key=f"file_{st.session_state['uploader_key']}")
         if uploaded_image:
             max_page_for_ui = 1
             if uploaded_image.name.lower().endswith('.pdf'):
@@ -281,7 +283,7 @@ def render_input_view():
                     render_two_stage_ui(res, doc=doc if 'doc' in locals() else None, coords=box, max_page_for_ui=max_page_for_ui, source_type="image", img_or_text=cropped_img, input_t="image")
 
     elif input_type == "📸 카메라 촬영":
-        camera_image = st.camera_input("카메라로 교재 촬영")
+        camera_image = st.camera_input("카메라로 교재 촬영", key=f"cam_{st.session_state['uploader_key']}")
         if camera_image:
             img = PIL.Image.open(camera_image)
             coords = get_default_coords(img)
@@ -292,13 +294,13 @@ def render_input_view():
                 render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="cam", img_or_text=cropped_img, input_t="image")
 
     elif input_type == "📝 텍스트 직접 입력":
-        input_text = st.text_area("외국어 텍스트 입력", height=200)
+        input_text = st.text_area("외국어 텍스트 입력", height=200, key=f"txt_{st.session_state['uploader_key']}")
         if input_text.strip():
             res = render_input_options(max_page=1)
             render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="txt", img_or_text=input_text, input_t="text")
 
     elif input_type == "📂 공유된 파일 들여오기":
-        uploaded_json = st.file_uploader("친구가 공유한 EduAI JSON 파일 업로드", type=["json"])
+        uploaded_json = st.file_uploader("친구가 공유한 EduAI JSON 파일 업로드", type=["json"], key=f"json_{st.session_state['uploader_key']}")
         if uploaded_json:
             try:
                 import json

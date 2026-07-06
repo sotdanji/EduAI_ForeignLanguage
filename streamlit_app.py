@@ -38,6 +38,8 @@ if "load_passage_id" not in st.session_state:
     st.session_state["load_passage_id"] = None
 if "switch_to_tab1" not in st.session_state:
     st.session_state["switch_to_tab1"] = False
+if "uploader_key" not in st.session_state:
+    st.session_state["uploader_key"] = 0
 
 # 대시보드에서 지문 불러오기 처리
 if st.session_state["load_passage_id"]:
@@ -45,6 +47,8 @@ if st.session_state["load_passage_id"]:
     if passage:
         st.session_state["parsed_data"] = passage
         st.session_state["switch_to_tab1"] = True
+        if "partial_analysis" in st.session_state:
+            del st.session_state["partial_analysis"]
     st.session_state["load_passage_id"] = None
     st.rerun()
 
