@@ -148,12 +148,10 @@ def render_input_view():
             st.info("💡 똑똑한 분석을 위해 이 문서의 종류를 알려주세요!")
             doc_type = st.radio("문서 성격", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"))
             
-        custom_title = st.text_input("지문 제목 지정 (AI 추천 제목 적용됨)", value=prep_res.get("title", ""))
-        
         page_num = 1
         if max_page > 1:
             st.markdown("##### 📄 다중 페이지 병합 처리")
-            col1, col2 = st.columns(2)
+            col1, col2 = st.columns([1, 2])
             with col1:
                 curr_page = st.session_state.get("pdf_page_num", 1)
                 if curr_page > max_page:
@@ -165,6 +163,8 @@ def render_input_view():
                 do_merge = st.checkbox("이 페이지를 병합 대기열에 추가", value=False)
         else:
             do_merge = st.checkbox("다음 페이지 이어서 병합하기", value=False)
+            
+        custom_title = st.text_input("지문 제목 지정 (AI 추천 제목 적용됨)", value=prep_res.get("title", ""))
             
         return custom_title, doc_type, do_merge, page_num
 
