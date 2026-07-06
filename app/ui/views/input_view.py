@@ -135,20 +135,20 @@ def render_input_view():
                 if img is not None:
                     cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
                     if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True, help="파란색 박스로 지정한 영역의 텍스트를 AI 선생님이 분석합니다."):
-                    if not custom_title.strip():
-                        st.error("지문 제목을 입력해주세요.")
-                    elif check_passage_title_exists(st.session_state["user_id"], custom_title.strip()):
-                        st.error(f"이미 '{custom_title.strip()}' 제목으로 시작하는 지문이 있습니다. 다른 제목으로 수정해주세요.")
-                    else:
-                        with st.spinner("AI 분석 중..."):
-                            parsed = parser_agent.parse_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                            st.session_state["parsed_data"] = parsed
-                            if parsed and "error" not in parsed:
-                                if st.session_state.get("switch_to_tab1") is None: # Prevent duplicate insertion
-                                    first_sentence = parsed.get('title', '제목 없음')
-                                    final_title = f"{custom_title.strip()}_{first_sentence}"
-                                    add_passage(st.session_state["user_id"], final_title, parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
-                            st.rerun()
+                        if not custom_title.strip():
+                            st.error("지문 제목을 입력해주세요.")
+                        elif check_passage_title_exists(st.session_state["user_id"], custom_title.strip()):
+                            st.error(f"이미 '{custom_title.strip()}' 제목으로 시작하는 지문이 있습니다. 다른 제목으로 수정해주세요.")
+                        else:
+                            with st.spinner("AI 분석 중..."):
+                                parsed = parser_agent.parse_from_image(cropped_img, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
+                                st.session_state["parsed_data"] = parsed
+                                if parsed and "error" not in parsed:
+                                    if st.session_state.get("switch_to_tab1") is None: # Prevent duplicate insertion
+                                        first_sentence = parsed.get('title', '제목 없음')
+                                        final_title = f"{custom_title.strip()}_{first_sentence}"
+                                        add_passage(st.session_state["user_id"], final_title, parsed.get('type', 'reading'), parsed.get('source_language', 'en'), parsed.get('target_language', 'ko'), parsed)
+                                st.rerun()
 
         elif input_type == "📸 카메라 촬영":
             camera_image = st.camera_input("카메라로 교재 촬영")
