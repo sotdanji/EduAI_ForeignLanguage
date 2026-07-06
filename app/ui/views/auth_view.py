@@ -62,12 +62,15 @@ def render_auth_view():
                     submit_register = st.form_submit_button("📝 가입하기", use_container_width=True, help="입력한 정보로 새로운 계정을 만듭니다.")
                     
                     if submit_register:
+                        import re
                         clean_reg_user = reg_user.strip()
                         clean_reg_pw = reg_pw.strip()
                         clean_reg_pw_confirm = reg_pw_confirm.strip()
                         
                         if not clean_reg_user or not clean_reg_pw:
                             st.error("아이디와 비밀번호를 모두 입력해주세요.")
+                        elif len(clean_reg_pw) < 6 or not re.search(r"[a-zA-Z]", clean_reg_pw) or not re.search(r"\d", clean_reg_pw) or not re.search(r"[^a-zA-Z0-9]", clean_reg_pw):
+                            st.error("비밀번호는 영문, 숫자, 특수문자를 포함하여 6자 이상이어야 합니다.")
                         elif clean_reg_pw != clean_reg_pw_confirm:
                             st.error("비밀번호가 일치하지 않습니다.")
                         else:

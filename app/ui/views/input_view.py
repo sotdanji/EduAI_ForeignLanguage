@@ -1,10 +1,14 @@
 import streamlit as st
 import PIL.Image
 from streamlit_cropper import st_cropper
-from app.agents import parser_agent, preprocessor_agent
+from app.agents.parser_agent import ParserAgent
+from app.agents.preprocessor_agent import PreprocessorAgent
 from app.db.database import get_setting, set_setting, add_passage, check_passage_title_exists
 import hashlib
 import numpy as np
+
+parser_agent = ParserAgent()
+preprocessor_agent = PreprocessorAgent()
 
 def get_image_hash(img_bytes):
     return hashlib.md5(img_bytes).hexdigest()
