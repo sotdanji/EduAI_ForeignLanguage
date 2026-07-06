@@ -123,10 +123,9 @@ def render_input_view():
             final_data = st.session_state["merge_buffer"]
             st.session_state["parsed_data"] = final_data
             if final_data and "error" not in final_data:
-                if st.session_state.get("switch_to_tab1") is None:
-                    first_sentence = final_data.get('title', '제목 없음')
-                    final_title = f"{custom_title.strip()}_{first_sentence}"
-                    add_passage(st.session_state["user_id"], final_title, final_data.get('type', 'reading'), final_data.get('source_language', 'en'), final_data.get('target_language', 'ko'), final_data)
+                first_sentence = final_data.get('title', '제목 없음')
+                final_title = f"{custom_title.strip()}_{first_sentence}" if custom_title.strip() else first_sentence
+                add_passage(st.session_state["user_id"], final_title, final_data.get('type', 'reading'), final_data.get('source_language', 'en'), final_data.get('target_language', 'ko'), final_data)
             st.session_state['switch_to_tab1'] = True
             st.session_state["merge_buffer"] = None
         else:
@@ -135,7 +134,7 @@ def render_input_view():
 
     def render_input_options(max_page=1):
         st.markdown("---")
-        doc_type = st.radio("문서 성격 선택", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"), horizontal=True)
+        doc_type = st.radio("문서 성격 선택", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"))
 
         custom_title = st.text_input("지문 제목 지정 (비워두면 AI가 자동 추출합니다)", value="")
 
