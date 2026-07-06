@@ -24,18 +24,22 @@ class PreprocessorAgent(BaseGeminiAgent):
             "reasoning": {
                 "type": "string",
                 "description": "왜 이렇게 분류했는지에 대한 짧은 판단 이유."
+            },
+            "raw_text": {
+                "type": "string",
+                "description": "자료에 포함된 순수 원본 텍스트. 번역이나 편집을 가하지 말고 보이는 그대로(또는 입력된 텍스트 그대로) 모든 내용을 추출하세요. 문단 바꿈(엔터)도 최대한 유지하세요."
             }
         },
-        "required": ["title", "document_type", "is_meaningful_content", "reasoning"]
+        "required": ["title", "document_type", "is_meaningful_content", "reasoning", "raw_text"]
     }
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
     def analyze_document_intent(self, input_data: Union[str, Any], input_type: str = "image") -> Dict[str, Any]:
         prompt = """
-        당신은 AI 외국어 학습 시스템의 데이터를 1차적으로 검증하는 '분석 전처리관(Gatekeeper)'입니다.
-        주어진 입력 자료(텍스트 또는 이미지)를 빠르게 스캔하여 문서의 성격을 분류하세요.
+        당신은 AI 외국어 학습 시스템의 데이터를 1차적으로 검증하고 텍스트를 추출하는 '전처리관(Preprocessor)'입니다.
+        주어진 입력 자료(텍스트 또는 이미지)를 스캔하여 문서의 성격을 분류하고, 모든 텍스트를 그대로 추출하세요.
         
-        [판단 기준]
+        [수행 지침]
         1. 학습 자료로서의 가치 (is_meaningful_content): 아무 의미 없는 텍스트(예: "ㅁㄴㅇㄹ", "aaaa")나 외국어 학습과 전혀 무관한 사진인 경우 false를 반환하세요.
         2. 문서 종류 (document_type):
            - reading: 단순한 외국어 독해 지문이나 대화문
@@ -43,7 +47,8 @@ class PreprocessorAgent(BaseGeminiAgent):
            - handout: 독해 지문뿐만 아니라, 선생님의 한글 해설, 문법 설명, 빈칸 뚫기 등이 섞인 학습 유인물
            - irrelevant: 학습과 무관한 쓰레기값 (is_meaningful_content가 false일 때)
            - ambiguous: 위 기준 중 어느 것인지 명확히 판단하기 어려울 때
-        3. 문서 제목 (title): 문서 상단이나 눈에 띄는 제목(단원명, 시험 이름 등)이 있다면 그대로 추출하세요. 지문 내의 소제목이 아니라 전체 프린트물의 제목을 뜻합니다. 없으면 빈 문자열을 반환하세요.
+        3. 문서 제목 (title): 문서 상단이나 눈에 띄는 제목(단원명, 시험 이름 등)이 있다면 추출. (없으면 빈 문자열)
+        4. 원문 추출 (raw_text): 자료에 포함된 '모든 글자'를 번역이나 요약 없이 원본 그대로 추출하세요. 줄바꿈과 문단 형태를 최대한 보존하세요.
         
         결과는 반드시 제공된 JSON Schema에 맞게 반환해야 합니다.
         """
