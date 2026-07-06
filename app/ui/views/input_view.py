@@ -116,7 +116,7 @@ def render_input_view():
             st.success("현재 페이지가 병합 대기열에 추가되었습니다. 다음 페이지를 분석해주세요.")
         st.rerun()
 
-    def render_preprocessor_ui(img_or_text, input_t):
+    def render_preprocessor_ui(img_or_text, input_t, max_page=1):
         if "preprocessed" not in st.session_state:
             st.session_state.preprocessed = {}
         
@@ -149,26 +149,41 @@ def render_input_view():
             doc_type = st.radio("문서 성격", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"))
             
         custom_title = st.text_input("지문 제목 지정 (AI 추천 제목 적용됨)", value=prep_res.get("title", ""))
-        do_merge = st.checkbox("다음 페이지 이어서 병합하기", value=False)
         
-        return custom_title, doc_type, do_merge
+        page_num = 1
+        if max_page > 1:
+            st.markdown("##### 📄 다중 페이지 병합 처리")
+            col1, col2 = st.columns(2)
+            with col1:
+                curr_page = st.session_state.get("pdf_page_num", 1)
+                if curr_page > max_page:
+                    curr_page = 1
+                page_num = st.number_input("분석할 페이지 번호 선택", min_value=1, max_value=max_page, value=curr_page, key="pdf_page_num")
+            with col2:
+                st.write("")
+                st.write("")
+                do_merge = st.checkbox("이 페이지를 병합 대기열에 추가", value=False)
+        else:
+            do_merge = st.checkbox("다음 페이지 이어서 병합하기", value=False)
+            
+        return custom_title, doc_type, do_merge, page_num
 
     if input_type == "📁 스크린샷 또는 사진 파일 업로드":
         uploaded_image = st.file_uploader("파일 업로드", type=["png", "jpg", "jpeg", "pdf"])
         if uploaded_image:
+            max_page_for_ui = 1
             if uploaded_image.name.lower().endswith('.pdf'):
                 try:
                     import fitz  # PyMuPDF
                     import io
                     doc = fitz.open(stream=uploaded_image.read(), filetype="pdf")
                     num_pages = len(doc)
-                    max_page = min(num_pages, 10)
+                    max_page_for_ui = min(num_pages, 10)
                     if num_pages > 10:
                         st.warning(f"📄 PDF가 총 {num_pages}페이지입니다. 시스템 안정성을 위해 처음 10페이지만 추출 및 분석이 지원됩니다.")
                     
-                    if max_page > 1:
-                        page_num = st.number_input("분석할 페이지 번호 선택", min_value=1, max_value=max_page, value=1)
-                    else:
+                    page_num = st.session_state.get("pdf_page_num", 1)
+                    if page_num > max_page_for_ui:
                         page_num = 1
                         
                     page = doc.load_page(page_num - 1)
@@ -185,9 +200,9 @@ def render_input_view():
                 coords = get_default_coords(img)
                 cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords)
                 
-                res = render_preprocessor_ui(cropped_img, "image")
+                res = render_preprocessor_ui(cropped_img, "image", max_page=max_page_for_ui)
                 if res[0] is not None:
-                    custom_title, doc_type, do_merge = res
+                    custom_title, doc_type, do_merge, _ = res
                     if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True):
                         if not custom_title.strip():
                             st.error("지문 제목을 입력해주세요.")
@@ -204,7 +219,7 @@ def render_input_view():
             cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords)
             res = render_preprocessor_ui(cropped_img, "image")
             if res[0] is not None:
-                custom_title, doc_type, do_merge = res
+                custom_title, doc_type, do_merge, _ = res
                 if st.button("🚀 촬영 영역 분석 시작", key="btn_cam", use_container_width=True):
                     if not custom_title.strip():
                         st.error("지문 제목을 입력해주세요.")
@@ -218,7 +233,7 @@ def render_input_view():
         if input_text.strip():
             res = render_preprocessor_ui(input_text, "text")
             if res[0] is not None:
-                custom_title, doc_type, do_merge = res
+                custom_title, doc_type, do_merge, _ = res
                 if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True):
                     if not custom_title.strip():
                         st.error("지문 제목을 입력해주세요.")
