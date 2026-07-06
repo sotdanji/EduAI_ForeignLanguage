@@ -24,6 +24,35 @@ def render_parsed_result(data: Dict[str, Any]):
     import streamlit.components.v1 as components
     from app.core.tts_engine import generate_audio_sync, get_voice_for_language
 
+    is_test_paper = data.get("type") in ["test_paper", "handout"]
+    
+    if is_test_paper:
+        st.markdown("### 📝 시험지 / 유인물 원문")
+        st.info("시험지나 유인물은 전체를 한 번에 분석하지 않습니다. 아래 원문에서 **학습하고 싶은 부분만 드래그해서 복사**한 뒤, 바로 아래의 [부분 학습 창]에 붙여넣으세요!")
+        st.markdown(f"```text\n{data.get('raw_text', '')}\n```")
+        st.markdown("---")
+        
+        st.markdown("### 🔍 집중 학습할 텍스트 입력")
+        pasted_text = st.text_area("위 원문에서 학습할 영어 문장/지문을 복사해서 여기에 붙여넣으세요.", height=150, key="partial_text_input")
+        
+        if st.button("🚀 이 부분만 집중 학습하기", use_container_width=True):
+            if not pasted_text.strip():
+                st.error("학습할 텍스트를 입력해주세요.")
+            else:
+                with st.spinner("선택한 부분 집중 분석 중..."):
+                    from app.agents import parser_agent
+                    # partial parsed result
+                    partial_parsed = parser_agent.parse_from_text(pasted_text, doc_type="reading")
+                    st.session_state["partial_analysis"] = partial_parsed
+                    
+        if "partial_analysis" in st.session_state:
+            data = st.session_state["partial_analysis"]
+            st.markdown("---")
+            st.subheader("🎯 부분 학습 분석 결과")
+        else:
+            # 부분 학습 결과가 아직 없으면 여기서 렌더링 종료
+            return
+
     # 3. 본문 (Reading/Dialogue)
     contents = data.get("contents", [])
     if contents:
