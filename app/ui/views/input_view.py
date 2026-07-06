@@ -32,6 +32,23 @@ def get_default_coords(img):
     except:
         return None
 
+def parse_page_range(range_str, max_page):
+    pages = set()
+    parts = str(range_str).split(',')
+    for part in parts:
+        part = part.strip()
+        if not part: continue
+        if '-' in part:
+            bounds = part.split('-')
+            if len(bounds) == 2 and bounds[0].isdigit() and bounds[1].isdigit():
+                start, end = int(bounds[0]), int(bounds[1])
+                pages.update(range(start, end + 1))
+        elif part.isdigit():
+            pages.add(int(part))
+    
+    valid_pages = sorted([p for p in pages if 1 <= p <= max_page])
+    return valid_pages if valid_pages else [1]
+
 def render_input_view():
     header_left1, header_left2 = st.columns([1, 2.5])
     with header_left1:
@@ -147,26 +164,78 @@ def render_input_view():
         if doc_type == "ambiguous":
             st.info("💡 똑똑한 분석을 위해 이 문서의 종류를 알려주세요!")
             doc_type = st.radio("문서 성격", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"))
-            
-        page_num = 1
-        if max_page > 1:
-            st.markdown("##### 📄 다중 페이지 병합 처리")
-            col1, col2 = st.columns([1, 2])
-            with col1:
-                curr_page = st.session_state.get("pdf_page_num", 1)
-                if curr_page > max_page:
-                    curr_page = 1
-                page_num = st.number_input("분석할 페이지 번호 선택", min_value=1, max_value=max_page, value=curr_page, key="pdf_page_num")
-            with col2:
-                st.write("")
-                st.write("")
-                do_merge = st.checkbox("이 페이지를 병합 대기열에 추가", value=False)
-        else:
-            do_merge = st.checkbox("다음 페이지 이어서 병합하기", value=False)
-            
+
         custom_title = st.text_input("지문 제목 지정 (AI 추천 제목 적용됨)", value=prep_res.get("title", ""))
+
+        page_range_str = "1"
+        do_merge = False
+        if max_page > 1:
+            st.markdown("##### 📄 다중 페이지 일괄 추출")
+            curr_range = st.session_state.get("pdf_page_range", "1")
+            page_range_str = st.text_input("분석할 페이지 (예: 1-3, 5)", value=curr_range, key="pdf_page_range")
+        else:
+            do_merge = st.checkbox("다음 페이지 이어서 추가하기", value=False)
             
-        return custom_title, doc_type, do_merge, page_num
+        return custom_title, doc_type, do_merge, page_range_str, prep_res.get("raw_text", "")
+
+    def render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="image"):
+        custom_title, doc_type, do_merge, page_range_str, first_raw_text = res
+        
+        if "extracted_raw_text" not in st.session_state:
+            if st.button("🚀 1단계: 원문 텍스트 추출 시작", key=f"btn_extract_{source_type}", use_container_width=True):
+                if not custom_title.strip():
+                    st.error("지문 제목을 입력해주세요.")
+                else:
+                    pages_to_process = parse_page_range(page_range_str, max_page_for_ui) if max_page_for_ui > 1 else [1]
+                    
+                    if len(pages_to_process) == 1:
+                        st.session_state["extracted_raw_text"] = first_raw_text
+                    else:
+                        with st.spinner("다중 페이지 원문 일괄 추출 중..."):
+                            my_bar = st.progress(0, text="일괄 추출 중...")
+                            combined_text = []
+                            for idx, p in enumerate(pages_to_process):
+                                if idx == 0:
+                                    combined_text.append(first_raw_text)
+                                else:
+                                    import io
+                                    if doc is not None and coords is not None:
+                                        p_page = doc.load_page(p - 1)
+                                        p_pix = p_page.get_pixmap(dpi=150)
+                                        p_img = PIL.Image.open(io.BytesIO(p_pix.tobytes("png")))
+                                        left, top, width, height = coords['left'], coords['top'], coords['width'], coords['height']
+                                        curr_cropped = p_img.crop((left, top, left + width, top + height))
+                                        
+                                        prep_p = preprocessor_agent.analyze_document_intent(curr_cropped, "image")
+                                        combined_text.append(prep_p.get("raw_text", ""))
+                                my_bar.progress((idx + 1) / len(pages_to_process), text=f"{p}페이지 추출 완료 ({idx+1}/{len(pages_to_process)})")
+                            
+                            st.session_state["extracted_raw_text"] = "\n\n".join(combined_text)
+                    
+                    st.session_state["extracted_doc_type"] = doc_type
+                    st.session_state["extracted_custom_title"] = custom_title
+                    st.session_state["extracted_do_merge"] = do_merge
+                    st.rerun()
+        else:
+            st.markdown("### 🔍 1단계 완료: 추출된 원문 확인 및 편집")
+            st.info("아래 텍스트 창에서 오류를 직접 수정하거나 불필요한 내용(페이지 번호 등)을 삭제하세요.")
+            edited_text = st.text_area("추출된 원문", value=st.session_state["extracted_raw_text"], height=300)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🚀 2단계: 텍스트 편집 완료 및 심층 분석 시작", use_container_width=True):
+                    with st.spinner("AI 번역 및 심층 분석 중..."):
+                        parsed = parser_agent.parse_from_text(edited_text, doc_type=st.session_state["extracted_doc_type"], extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
+                        handle_analysis(parsed, st.session_state["extracted_custom_title"], st.session_state["extracted_doc_type"], st.session_state["extracted_do_merge"])
+                        if "extracted_raw_text" in st.session_state:
+                            del st.session_state["extracted_raw_text"]
+                            del st.session_state["extracted_doc_type"]
+                            del st.session_state["extracted_custom_title"]
+                            del st.session_state["extracted_do_merge"]
+            with col2:
+                if st.button("❌ 취소 및 다시 추출", use_container_width=True):
+                    del st.session_state["extracted_raw_text"]
+                    st.rerun()
 
     if input_type == "📁 스크린샷 또는 사진 파일 업로드":
         uploaded_image = st.file_uploader("파일 업로드", type=["png", "jpg", "jpeg", "pdf"])
@@ -198,42 +267,30 @@ def render_input_view():
                 
             if img is not None:
                 coords = get_default_coords(img)
-                cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords)
+                box = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords, return_type="box")
+                cropped_img = img.crop((box['left'], box['top'], box['left'] + box['width'], box['top'] + box['height']))
                 
                 res = render_preprocessor_ui(cropped_img, "image", max_page=max_page_for_ui)
                 if res[0] is not None:
-                    custom_title, doc_type, do_merge, _ = res
-                    if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True):
-                        if not custom_title.strip():
-                            st.error("지문 제목을 입력해주세요.")
-                        else:
-                            with st.spinner("AI 분석 중..."):
-                                parsed = parser_agent.parse_from_image(cropped_img, doc_type=doc_type, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                                handle_analysis(parsed, custom_title, doc_type, do_merge)
+                    render_two_stage_ui(res, doc=doc if 'doc' in locals() else None, coords=box, max_page_for_ui=max_page_for_ui, source_type="image")
 
     elif input_type == "📸 카메라 촬영":
         camera_image = st.camera_input("카메라로 교재 촬영")
         if camera_image:
             img = PIL.Image.open(camera_image)
             coords = get_default_coords(img)
-            cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords)
+            box = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords, return_type="box")
+            cropped_img = img.crop((box['left'], box['top'], box['left'] + box['width'], box['top'] + box['height']))
             res = render_preprocessor_ui(cropped_img, "image")
             if res[0] is not None:
-                custom_title, doc_type, do_merge, _ = res
-                if st.button("🚀 촬영 영역 분석 시작", key="btn_cam", use_container_width=True):
-                    if not custom_title.strip():
-                        st.error("지문 제목을 입력해주세요.")
-                    else:
-                        with st.spinner("AI 분석 중..."):
-                            parsed = parser_agent.parse_from_image(cropped_img, doc_type=doc_type, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                            handle_analysis(parsed, custom_title, doc_type, do_merge)
+                render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="cam")
 
     elif input_type == "📝 텍스트 직접 입력":
         input_text = st.text_area("외국어 텍스트 입력", height=200)
         if input_text.strip():
             res = render_preprocessor_ui(input_text, "text")
             if res[0] is not None:
-                custom_title, doc_type, do_merge, _ = res
+                custom_title, doc_type, do_merge, _, raw_text = res
                 if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True):
                     if not custom_title.strip():
                         st.error("지문 제목을 입력해주세요.")
