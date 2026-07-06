@@ -18,7 +18,7 @@ class ParserAgent(BaseGeminiAgent):
                 "description": "본문을 번역한 목표 언어 코드를 ISO 639-1 형식(예: 'ko', 'en' 등)으로 반환하세요."
             },
             "title": {"type": "string", "description": "지문의 핵심 주제나 제목을 해당 외국어(혹은 원어)로 요약 (최대 5단어)"},
-            "type": {"type": "string", "description": "'reading' 또는 'dialogue' 중 하나"},
+            "type": {"type": "string", "description": "'reading', 'dialogue', 'test_paper', 'handout' 중 하나"},
             "contents": {
                 "type": "array",
                 "description": "본문의 문장 단위 분할 데이터",
@@ -66,7 +66,7 @@ class ParserAgent(BaseGeminiAgent):
     }
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
-    def parse_from_text(self, text: str, extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
+    def parse_from_text(self, text: str, doc_type: str = "reading", extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
         original_questions_instruction = (
             "본문 하단이나 주변에 연습문제, 객관식 보기, 혹은 학습용 과제(Task)가 있다면 이를 찾아 'original_questions' 배열에 추출하세요.\n"
             "       **[주의]** 만약 하나의 공통 지시문 아래에 여러 하위 문제가 있다면, 절대로 하나로 뭉뚱그리지 말고 **각각의 하위 문제를 개별적인 배열 객체(독립된 문제)로 분리**하세요."
@@ -84,6 +84,14 @@ class ParserAgent(BaseGeminiAgent):
             "**[평어체 사용]** 전체적인 문맥이나 해설, 일반 독해 지문 번역 시 '~한다', '~이다' 등 교과서나 일기장처럼 평범한 반말을 기본으로 사용하세요."
         )
         
+        preservation_instruction = (
+            "**[원본 100% 보존 필수]** 이 문서는 시험지이거나 해설이 포함된 유인물입니다. 어떠한 텍스트도 임의로 생략하거나 삭제하지 마세요. "
+            "문제 번호, 한글 지시문, 객관식 보기, 부연 설명 등 모든 내용을 순서대로 `contents`에 빠짐없이 추출해야 합니다. "
+            "외국어 본문이 아닌 지시문/해설 부분은 `source_text`에 원문을 넣고, `target_text`에도 동일하게 넣거나 빈칸으로 두고, `speaker_gender`는 'neutral', `speaker_name`은 '지시문/해설'로 지정하세요."
+            if doc_type in ["test_paper", "handout"] else
+            f"원본 본문(Reading)이나 대화문(Dialogue) 부분만 추출하여 문장 단위로 분할(contents)하고 '{target_language}'(으)로 번역하세요. 만약 원본과 '{target_language}'이(가) 동일하다면 번역 대신 원문을 문맥에 맞게 다듬어 제공하세요. 페이지 번호 등은 무시하세요."
+        )
+        
         prompt = f"""
         당신은 엘리트 외국어 선생님입니다. 
         현재 지도하는 학생의 수준은 '{student_level}'입니다.
@@ -93,9 +101,9 @@ class ParserAgent(BaseGeminiAgent):
         {text}
         </INPUT_TEXT>
 
-        1. 원본 본문(Reading)이나 대화문(Dialogue) 부분만 추출하여 문장 단위로 분할(contents)하고 '{target_language}'(으)로 번역하세요. 만약 원본과 '{target_language}'이(가) 동일하다면 번역 대신 원문을 문맥에 맞게 다듬어 제공하세요. 페이지 번호 등은 무시하세요.
-           {style_instruction}
-           {tone_instruction}
+        1. {{preservation_instruction}}
+           {{style_instruction}}
+           {{tone_instruction}}
            **[대화문 어조 예외 처리]** 대화문일 경우, 전체 문맥을 먼저 파악하여 화자와 청자의 최종적인 관계(예: 친구, 사제지간, 어른과 아이 등) 파악하세요. 각 등장인물별로 상대방에게 쓰는 어조(존댓말 또는 반말)를 관계에 맞게 결정하고 일관성을 유지하세요. 이 경우에는 위의 [경어체/평어체] 기본 설정보다 **등장인물 간의 관계**를 무조건 최우선으로 반영해야 합니다.
            화자를 분석하여 'speaker_gender'를 'male', 'female', 'neutral'(해설자 등) 중 하나로 정확히 매핑하세요.
         2. {original_questions_instruction}
@@ -119,7 +127,7 @@ class ParserAgent(BaseGeminiAgent):
             return {"error": str(e), "raw_response": getattr(response, 'text', '') if 'response' in locals() else ''}
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
-    def parse_from_image(self, image_part, extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
+    def parse_from_image(self, image_part, doc_type: str = "reading", extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
         original_questions_instruction = (
             "본문 하단이나 주변에 연습문제, 객관식 보기, 혹은 학습용 과제(Task)가 있다면 이를 찾아 'original_questions' 배열에 추출하세요.\n"
             "       **[주의]** 만약 하나의 공통 지시문 아래에 여러 하위 문제가 있다면, 절대로 하나로 뭉뚱그리지 말고 **각각의 하위 문제를 개별적인 배열 객체(독립된 문제)로 분리**하세요."
@@ -137,13 +145,21 @@ class ParserAgent(BaseGeminiAgent):
             "**[평어체 사용]** 전체적인 문맥이나 해설, 일반 독해 지문 번역 시 '~한다', '~이다' 등 교과서나 일기장처럼 평범한 반말을 기본으로 사용하세요."
         )
         
+        preservation_instruction = (
+            "**[원본 100% 보존 필수]** 이 문서는 시험지이거나 해설이 포함된 유인물입니다. 어떠한 텍스트도 임의로 생략하거나 삭제하지 마세요. "
+            "문제 번호, 한글 지시문, 객관식 보기, 부연 설명 등 모든 내용을 순서대로 `contents`에 빠짐없이 추출해야 합니다. "
+            "외국어 본문이 아닌 지시문/해설 부분은 `source_text`에 원문을 넣고, `target_text`에도 동일하게 넣거나 빈칸으로 두고, `speaker_gender`는 'neutral', `speaker_name`은 '지시문/해설'로 지정하세요."
+            if doc_type in ["test_paper", "handout"] else
+            f"원본 본문(Reading)이나 대화문(Dialogue) 부분만 추출하여 문장 단위로 분할(contents)하고 '{target_language}'(으)로 번역하세요. 만약 원본과 '{target_language}'이(가) 동일하다면 번역 대신 원문을 문맥에 맞게 다듬어 제공하세요. 페이지 번호 등은 무시하세요."
+        )
+        
         prompt = f"""
         당신은 엘리트 외국어 선생님입니다. 
         현재 지도하는 학생의 수준은 '{student_level}'입니다.
         제공된 교재 이미지를 분석하세요.
-        1. 원본 본문(Reading)이나 대화문(Dialogue) 부분만 추출하여 문장 단위로 분할(contents)하고 '{target_language}'(으)로 번역하세요. 만약 원본과 '{target_language}'이(가) 동일하다면 번역 대신 원문을 문맥에 맞게 다듬어 제공하세요. 페이지 번호 등은 무시하세요.
-           {style_instruction}
-           {tone_instruction}
+        1. {{preservation_instruction}}
+           {{style_instruction}}
+           {{tone_instruction}}
            **[대화문 어조 예외 처리]** 대화문일 경우, 전체 문맥을 먼저 파악하여 화자와 청자의 최종적인 관계(예: 친구, 사제지간, 어른과 아이 등) 파악하세요. 각 등장인물별로 상대방에게 쓰는 어조(존댓말 또는 반말)를 관계에 맞게 결정하고 일관성을 유지하세요. 이 경우에는 위의 [경어체/평어체] 기본 설정보다 **등장인물 간의 관계**를 무조건 최우선으로 반영해야 합니다.
            화자를 분석하여 'speaker_gender'를 'male', 'female', 'neutral'(해설자 등) 중 하나로 정확히 매핑하세요.
         2. {original_questions_instruction}
