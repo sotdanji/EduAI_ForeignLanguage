@@ -26,7 +26,9 @@ def render_library_view():
             with st.container(border=True):
                 scol1, scol2, scol3, scol4 = st.columns([4, 1, 1, 1])
                 with scol1:
-                    st.markdown(f"**{p.get('title', '제목 없음')}** ({p.get('type', '타입없음')})")
+                    t_val = p.get('type', 'reading')
+                    type_str = "📖 일반 지문" if t_val == 'reading' else ("📝 시험지" if t_val == 'test_paper' else ("📄 해설 유인물" if t_val == 'handout' else t_val))
+                    st.markdown(f"**{p.get('title', '제목 없음')}** ({type_str})")
                     st.caption(f"{p['created_at']}")
                 with scol2:
                     if st.button("📖", key=f"load_p_{p['id']}", help="불러오기"):
