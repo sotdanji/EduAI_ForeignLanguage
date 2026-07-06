@@ -19,8 +19,13 @@ from app.ui.views.vocab_view import render_vocab_view
 from app.ui.views.dashboard_view import render_dashboard_view
 
 load_dotenv()
-configure_gemini()
-init_db()
+
+@st.cache_resource
+def init_system():
+    configure_gemini()
+    init_db()
+
+init_system()
 
 st.set_page_config(page_title="EduAI Foreign Language", page_icon="🏫", layout="wide")
 
