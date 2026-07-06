@@ -135,7 +135,7 @@ def render_input_view():
 
     def render_input_options(max_page=1):
         st.markdown("---")
-        doc_type = st.radio("문서 성격 선택", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"))
+        doc_type = st.radio("문서 성격 선택", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"), horizontal=True)
 
         custom_title = st.text_input("지문 제목 지정 (비워두면 AI가 자동 추출합니다)", value="")
 
