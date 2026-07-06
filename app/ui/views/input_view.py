@@ -49,6 +49,10 @@ def render_input_view():
         if "extract_original" not in st.session_state:
             val = get_setting(st.session_state["user_id"], "extract_original", "True")
             st.session_state["extract_original"] = (val == "True")
+        if "translation_style" not in st.session_state:
+            st.session_state["translation_style"] = get_setting(st.session_state["user_id"], "translation_style", "자연스러운 번역 (의역)")
+        if "translation_tone" not in st.session_state:
+            st.session_state["translation_tone"] = get_setting(st.session_state["user_id"], "translation_tone", "경어체 (~해요)")
 
         new_level = st.selectbox("🎯 학습 대상 수준", ["초등학교 고학년", "중학교 1학년", "중학교 2학년", "중학교 3학년", "고등학교 1학년", "고등학교 2학년", "고등학교 3학년", "성인 (일반)"], index=["초등학교 고학년", "중학교 1학년", "중학교 2학년", "중학교 3학년", "고등학교 1학년", "고등학교 2학년", "고등학교 3학년", "성인 (일반)"].index(st.session_state["student_level"]))
         if new_level != st.session_state["student_level"]:
@@ -60,6 +64,18 @@ def render_input_view():
         if new_target != st.session_state["target_language"]:
             st.session_state["target_language"] = new_target
             set_setting(st.session_state["user_id"], "target_language", new_target)
+            st.rerun()
+
+        new_style = st.selectbox("📝 번역 스타일", ["자연스러운 번역 (의역)", "문법 중심 직역"], index=["자연스러운 번역 (의역)", "문법 중심 직역"].index(st.session_state["translation_style"]))
+        if new_style != st.session_state["translation_style"]:
+            st.session_state["translation_style"] = new_style
+            set_setting(st.session_state["user_id"], "translation_style", new_style)
+            st.rerun()
+
+        new_tone = st.selectbox("🗣️ 번역 어조", ["경어체 (~해요)", "평어체 (~한다)"], index=["경어체 (~해요)", "평어체 (~한다)"].index(st.session_state["translation_tone"]))
+        if new_tone != st.session_state["translation_tone"]:
+            st.session_state["translation_tone"] = new_tone
+            set_setting(st.session_state["user_id"], "translation_tone", new_tone)
             st.rerun()
 
         new_extract = st.checkbox("✅ 이미지에서 기존 문제(객관식/주관식) 추출하여 보존하기", value=st.session_state["extract_original"], help="체크하면 사진에 포함된 연습문제도 함께 인식하여 '원래 문제 풀기' 기능을 활성화합니다.")
