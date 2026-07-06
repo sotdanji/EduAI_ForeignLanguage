@@ -4,7 +4,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_resul
 from app.agents.base_agent import BaseGeminiAgent, is_error_result
 
 class TutorAgent(BaseGeminiAgent):
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result), retry_error_callback=lambda rs: rs.outcome.result())
     def get_tutor_chat_response(self, chat_history: list, parsed_data: Dict[str, Any], mode: str = "qa", student_level: str = "중학교 1학년") -> str:
         context_str = "다음은 현재 학생이 학습 중인 외국어 본문과 관련 데이터입니다:\n\n"
         title = parsed_data.get("title", "")

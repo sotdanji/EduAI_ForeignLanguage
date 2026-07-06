@@ -33,7 +33,7 @@ class PreprocessorAgent(BaseGeminiAgent):
         "required": ["title", "document_type", "is_meaningful_content", "reasoning", "raw_text"]
     }
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result), retry_error_callback=lambda rs: rs.outcome.result())
     def analyze_document_intent(self, input_data: Union[str, Any], input_type: str = "image") -> Dict[str, Any]:
         prompt = """
         당신은 AI 외국어 학습 시스템의 데이터를 1차적으로 검증하고 텍스트를 추출하는 '전처리관(Preprocessor)'입니다.

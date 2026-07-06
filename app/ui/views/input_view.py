@@ -153,6 +153,11 @@ def render_input_view():
         
         prep_res = st.session_state.preprocessed[data_hash]
         
+        if "error" in prep_res:
+            st.error(f"AI 분석 중 오류가 발생했습니다: {prep_res['error']}")
+            st.warning("잠시 후 다시 시도하시거나, 할당량 초과일 수 있습니다.")
+            return None, None, None, None, None
+            
         if prep_res.get("document_type") == "irrelevant" or not prep_res.get("is_meaningful_content", True):
             st.warning("⚠️ 학습에 적합한 외국어 자료가 아닌 것 같습니다. (의미없는 이미지나 텍스트)")
             force_proceed = st.checkbox("그래도 강제로 분석 진행하기", value=False)
@@ -207,7 +212,10 @@ def render_input_view():
                                         curr_cropped = p_img.crop((left, top, left + width, top + height))
                                         
                                         prep_p = preprocessor_agent.analyze_document_intent(curr_cropped, "image")
-                                        combined_text.append(prep_p.get("raw_text", ""))
+                                        if "error" in prep_p:
+                                            st.error(f"페이지 {p} 추출 중 오류: {prep_p['error']}")
+                                        else:
+                                            combined_text.append(prep_p.get("raw_text", ""))
                                 my_bar.progress((idx + 1) / len(pages_to_process), text=f"{p}페이지 추출 완료 ({idx+1}/{len(pages_to_process)})")
                             
                             st.session_state["extracted_raw_text"] = "\n\n".join(combined_text)

@@ -15,7 +15,7 @@ class PronunciationAgent(BaseGeminiAgent):
         "required": ["transcription", "score", "feedback"]
     }
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result), retry_error_callback=lambda rs: rs.outcome.result())
     def evaluate_pronunciation(self, audio_bytes: bytes, target_sentence: str, target_language: str, mime_type: str = "audio/wav") -> Dict[str, Any]:
         prompt = f"""
         당신은 언어를 가르치는 외국어 과외 선생님입니다.

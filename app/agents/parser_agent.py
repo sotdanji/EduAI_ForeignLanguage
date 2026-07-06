@@ -65,7 +65,7 @@ class ParserAgent(BaseGeminiAgent):
         "required": ["source_language", "target_language", "title", "type", "contents", "vocabulary", "original_questions", "tutor_feedback"]
     }
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result), retry_error_callback=lambda rs: rs.outcome.result())
     def parse_from_text(self, text: str, doc_type: str = "reading", extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
         original_questions_instruction = (
             "본문 하단이나 주변에 연습문제, 객관식 보기, 혹은 학습용 과제(Task)가 있다면 이를 찾아 'original_questions' 배열에 추출하세요.\n"
@@ -126,7 +126,7 @@ class ParserAgent(BaseGeminiAgent):
         except Exception as e:
             return {"error": str(e), "raw_response": getattr(response, 'text', '') if 'response' in locals() else ''}
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_result(is_error_result), retry_error_callback=lambda rs: rs.outcome.result())
     def parse_from_image(self, image_part, doc_type: str = "reading", extract_original_questions: bool = True, student_level: str = "중학교 1학년", target_language: str = "한국어", translation_style: str = "자연스러운 번역 (의역)", translation_tone: str = "경어체 (~해요)") -> Dict[str, Any]:
         original_questions_instruction = (
             "본문 하단이나 주변에 연습문제, 객관식 보기, 혹은 학습용 과제(Task)가 있다면 이를 찾아 'original_questions' 배열에 추출하세요.\n"
