@@ -134,7 +134,7 @@ def render_input_view():
 
     def render_input_options(max_page=1):
         st.markdown("---")
-        doc_type = st.radio("문서 성격 선택", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"))
+        doc_type = st.radio("문서 성격 선택", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"), horizontal=True)
 
         custom_title = st.text_input("지문 제목 지정 (비워두면 AI가 자동 추출합니다)", value="")
 
@@ -206,10 +206,33 @@ def render_input_view():
             
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("🚀 2단계: 텍스트 편집 완료 및 심층 분석 시작", use_container_width=True):
-                    with st.spinner("AI 번역 및 심층 분석 중..."):
-                        parsed = parser_agent.parse_from_text(edited_text, doc_type=st.session_state["extracted_doc_type"], extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                        handle_analysis(parsed, edited_title, st.session_state["extracted_doc_type"], st.session_state["extracted_do_merge"])
+                doc_type_val = st.session_state["extracted_doc_type"]
+                if doc_type_val in ["test_paper", "handout"]:
+                    button_label = "🚀 2단계: 저장 및 학습하기로 이동"
+                else:
+                    button_label = "🚀 2단계: 텍스트 편집 완료 및 심층 분석 시작"
+
+                if st.button(button_label, use_container_width=True):
+                    with st.spinner("AI 분석 중... (시험지/유인물은 즉시 저장됩니다)"):
+                        if doc_type_val in ["test_paper", "handout"]:
+                            parsed = {
+                                "title": edited_title,
+                                "type": doc_type_val,
+                                "source_language": "en",
+                                "target_language": "ko",
+                                "contents": [], 
+                                "raw_text": edited_text,
+                                "vocabulary": [],
+                                "original_questions": []
+                            }
+                        else:
+                            parsed = parser_agent.parse_from_text(edited_text, doc_type=doc_type_val, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
+                        
+                        if "partial_analysis" in st.session_state:
+                            del st.session_state["partial_analysis"]
+                        
+                        handle_analysis(parsed, edited_title, doc_type_val, st.session_state["extracted_do_merge"])
+                        
                         if "extracted_raw_text" in st.session_state:
                             del st.session_state["extracted_raw_text"]
                             del st.session_state["extracted_doc_type"]
