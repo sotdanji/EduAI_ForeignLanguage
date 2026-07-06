@@ -131,6 +131,13 @@ def render_input_view():
             st.session_state['uploader_key'] += 1
         else:
             st.success("현재 페이지가 병합 대기열에 추가되었습니다. 다음 페이지를 분석해주세요.")
+            
+        if "extracted_raw_text" in st.session_state:
+            del st.session_state["extracted_raw_text"]
+            del st.session_state["extracted_doc_type"]
+            del st.session_state["extracted_custom_title"]
+            del st.session_state["extracted_do_merge"]
+            
         st.rerun()
 
     def render_input_options(max_page=1):
@@ -233,12 +240,6 @@ def render_input_view():
                             del st.session_state["partial_analysis"]
                         
                         handle_analysis(parsed, edited_title, doc_type_val, st.session_state["extracted_do_merge"])
-                        
-                        if "extracted_raw_text" in st.session_state:
-                            del st.session_state["extracted_raw_text"]
-                            del st.session_state["extracted_doc_type"]
-                            del st.session_state["extracted_custom_title"]
-                            del st.session_state["extracted_do_merge"]
             with col2:
                 if st.button("❌ 취소 및 다시 추출", use_container_width=True):
                     del st.session_state["extracted_raw_text"]
