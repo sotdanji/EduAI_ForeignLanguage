@@ -133,44 +133,11 @@ def render_input_view():
             st.success("현재 페이지가 병합 대기열에 추가되었습니다. 다음 페이지를 분석해주세요.")
         st.rerun()
 
-    def render_preprocessor_ui(img_or_text, input_t, max_page=1):
-        if "preprocessed" not in st.session_state:
-            st.session_state.preprocessed = {}
-        
-        # Simple caching
-        if input_t == "text":
-            data_hash = hashlib.md5(img_or_text.encode('utf-8')).hexdigest()
-        else:
-            import io
-            b = io.BytesIO()
-            img_or_text.save(b, format="PNG")
-            data_hash = get_image_hash(b.getvalue())
-
-        if data_hash not in st.session_state.preprocessed:
-            with st.spinner("AI가 문서 성격을 파악 중입니다..."):
-                res = preprocessor_agent.analyze_document_intent(img_or_text if input_t=="image" else img_or_text, input_t)
-                st.session_state.preprocessed[data_hash] = res
-        
-        prep_res = st.session_state.preprocessed[data_hash]
-        
-        if "error" in prep_res:
-            st.error(f"AI 분석 중 오류가 발생했습니다: {prep_res['error']}")
-            st.warning("잠시 후 다시 시도하시거나, 할당량 초과일 수 있습니다.")
-            return None, None, None, None, None
-            
-        if prep_res.get("document_type") == "irrelevant" or not prep_res.get("is_meaningful_content", True):
-            st.warning("⚠️ 학습에 적합한 외국어 자료가 아닌 것 같습니다. (의미없는 이미지나 텍스트)")
-            force_proceed = st.checkbox("그래도 강제로 분석 진행하기", value=False)
-            if not force_proceed:
-                return None, None
-        
+    def render_input_options(max_page=1):
         st.markdown("---")
-        doc_type = prep_res.get("document_type", "reading")
-        if doc_type == "ambiguous":
-            st.info("💡 똑똑한 분석을 위해 이 문서의 종류를 알려주세요!")
-            doc_type = st.radio("문서 성격", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"))
+        doc_type = st.radio("문서 성격 선택", ["reading", "test_paper", "handout"], format_func=lambda x: "📖 일반 지문" if x == "reading" else ("📝 시험지" if x == "test_paper" else "📄 해설 유인물"))
 
-        custom_title = st.text_input("지문 제목 지정 (AI 추천 제목 적용됨)", value=prep_res.get("title", ""))
+        custom_title = st.text_input("지문 제목 지정 (비워두면 AI가 자동 추출합니다)", value="")
 
         page_range_str = "1"
         do_merge = False
@@ -181,47 +148,51 @@ def render_input_view():
         else:
             do_merge = st.checkbox("다음 페이지 이어서 추가하기", value=False)
             
-        return custom_title, doc_type, do_merge, page_range_str, prep_res.get("raw_text", "")
+        return custom_title, doc_type, do_merge, page_range_str
 
-    def render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="image"):
-        custom_title, doc_type, do_merge, page_range_str, first_raw_text = res
+    def render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="image", img_or_text=None, input_t="image"):
+        custom_title, doc_type, do_merge, page_range_str = res
         
         if "extracted_raw_text" not in st.session_state:
             if st.button("🚀 1단계: 원문 텍스트 추출 시작", key=f"btn_extract_{source_type}", use_container_width=True):
-                if not custom_title.strip():
-                    st.error("지문 제목을 입력해주세요.")
-                else:
-                    pages_to_process = parse_page_range(page_range_str, max_page_for_ui) if max_page_for_ui > 1 else [1]
+                pages_to_process = parse_page_range(page_range_str, max_page_for_ui) if max_page_for_ui > 1 else [1]
+                
+                with st.spinner("다중 페이지 원문 일괄 추출 중..." if len(pages_to_process) > 1 else "원문 텍스트 추출 중..."):
+                    my_bar = st.progress(0, text="일괄 추출 중...") if len(pages_to_process) > 1 else None
+                    combined_text = []
+                    extracted_title = custom_title
                     
-                    if len(pages_to_process) == 1:
-                        st.session_state["extracted_raw_text"] = first_raw_text
-                    else:
-                        with st.spinner("다중 페이지 원문 일괄 추출 중..."):
-                            my_bar = st.progress(0, text="일괄 추출 중...")
-                            combined_text = []
-                            for idx, p in enumerate(pages_to_process):
-                                if idx == 0:
-                                    combined_text.append(first_raw_text)
-                                else:
-                                    import io
-                                    if doc is not None and coords is not None:
-                                        p_page = doc.load_page(p - 1)
-                                        p_pix = p_page.get_pixmap(dpi=150)
-                                        p_img = PIL.Image.open(io.BytesIO(p_pix.tobytes("png")))
-                                        left, top, width, height = coords['left'], coords['top'], coords['width'], coords['height']
-                                        curr_cropped = p_img.crop((left, top, left + width, top + height))
-                                        
-                                        prep_p = preprocessor_agent.analyze_document_intent(curr_cropped, "image")
-                                        if "error" in prep_p:
-                                            st.error(f"페이지 {p} 추출 중 오류: {prep_p['error']}")
-                                        else:
-                                            combined_text.append(prep_p.get("raw_text", ""))
-                                my_bar.progress((idx + 1) / len(pages_to_process), text=f"{p}페이지 추출 완료 ({idx+1}/{len(pages_to_process)})")
-                            
-                            st.session_state["extracted_raw_text"] = "\n\n".join(combined_text)
+                    for idx, p in enumerate(pages_to_process):
+                        if input_t == "text":
+                            prep_p = preprocessor_agent.analyze_document_intent(img_or_text, "text")
+                        elif source_type == "cam" or (max_page_for_ui == 1 and idx == 0 and img_or_text is not None):
+                            prep_p = preprocessor_agent.analyze_document_intent(img_or_text, "image")
+                        else:
+                            import io
+                            import PIL.Image
+                            if doc is not None and coords is not None:
+                                p_page = doc.load_page(p - 1)
+                                p_pix = p_page.get_pixmap(dpi=150)
+                                p_img = PIL.Image.open(io.BytesIO(p_pix.tobytes("png")))
+                                left, top, width, height = coords['left'], coords['top'], coords['width'], coords['height']
+                                curr_cropped = p_img.crop((left, top, left + width, top + height))
+                                prep_p = preprocessor_agent.analyze_document_intent(curr_cropped, "image")
+                            else:
+                                prep_p = preprocessor_agent.analyze_document_intent(img_or_text, "image")
+                                
+                        if "error" in prep_p:
+                            st.error(f"페이지 {p} 추출 중 오류: {prep_p['error']}")
+                        else:
+                            combined_text.append(prep_p.get("raw_text", ""))
+                            if not extracted_title and prep_p.get("title"):
+                                extracted_title = prep_p.get("title")
+                                
+                        if my_bar:
+                            my_bar.progress((idx + 1) / len(pages_to_process), text=f"{p}페이지 추출 완료 ({idx+1}/{len(pages_to_process)})")
                     
+                    st.session_state["extracted_raw_text"] = "\n\n".join(combined_text)
                     st.session_state["extracted_doc_type"] = doc_type
-                    st.session_state["extracted_custom_title"] = custom_title
+                    st.session_state["extracted_custom_title"] = extracted_title if extracted_title else "제목 없음"
                     st.session_state["extracted_do_merge"] = do_merge
                     st.rerun()
         else:
