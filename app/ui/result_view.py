@@ -159,7 +159,7 @@ def render_parsed_result(data: Dict[str, Any]):
                             <label style="cursor:pointer; white-space: nowrap;"><input type="radio" name="playMode" value="cross"> 교차</label>
                         </div>
                         <button id="range-mode-btn" onclick="toggleRangeMode()" style="background-color:#fff; border:1px solid #ccc; color:#333; padding:4px 8px; text-align:center; text-decoration:none; display:inline-block; font-size:12px; border-radius:4px; cursor:pointer; font-family:sans-serif;">
-                            범위 선택
+                            부분학습 범위선택
                         </button>
                         <button id="tts-play-btn" style="background-color:#4CAF50; border:none; color:white; padding:8px 20px; text-align:center; text-decoration:none; display:inline-block; font-size:14px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.15); transition: background-color 0.2s; white-space: nowrap; margin-left: auto;">
                             ▶ 듣기
