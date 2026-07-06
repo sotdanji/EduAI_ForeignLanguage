@@ -1,4 +1,4 @@
-﻿streamlit>=1.35.0
+streamlit>=1.35.0
 google-genai
 sqlalchemy
 pytest
@@ -11,3 +11,4 @@ qrcode[pil]
 psycopg2-binary==2.9.9
 edge-tts
 tenacity
+PyMuPDF

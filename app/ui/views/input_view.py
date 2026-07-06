@@ -105,11 +105,36 @@ def render_input_view():
             custom_title = st.text_input("지문 제목 지정 (필수, 예: 3학년 영어 1단원)")
 
         if input_type == "🖼️ 갤러리/스크린샷 업로드":
-            uploaded_image = st.file_uploader("스크린샷 또는 사진 파일 업로드 (JPG, PNG)", type=["jpg", "jpeg", "png"])
+            uploaded_image = st.file_uploader("스크린샷, 사진 또는 PDF 문서 업로드 (JPG, PNG, PDF)", type=["jpg", "jpeg", "png", "pdf"])
             if uploaded_image:
-                img = PIL.Image.open(uploaded_image)
-                cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
-                if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True, help="파란색 박스로 지정한 영역의 텍스트를 AI 선생님이 분석합니다."):
+                img = None
+                if uploaded_image.name.lower().endswith('.pdf'):
+                    try:
+                        import fitz  # PyMuPDF
+                        import io
+                        doc = fitz.open(stream=uploaded_image.read(), filetype="pdf")
+                        num_pages = len(doc)
+                        max_page = min(num_pages, 5)
+                        if num_pages > 5:
+                            st.warning(f"이 PDF는 총 {num_pages}페이지입니다. 시스템 안정성을 위해 처음 5페이지만 추출 및 분석이 지원됩니다.")
+                        
+                        if max_page > 1:
+                            page_num = st.number_input("분석할 페이지 번호 선택", min_value=1, max_value=max_page, value=1)
+                        else:
+                            page_num = 1
+                            
+                        page = doc.load_page(page_num - 1)
+                        pix = page.get_pixmap(dpi=150)
+                        img_bytes = pix.tobytes("png")
+                        img = PIL.Image.open(io.BytesIO(img_bytes))
+                    except Exception as e:
+                        st.error(f"PDF 파일을 읽는 중 오류가 발생했습니다: {e}")
+                else:
+                    img = PIL.Image.open(uploaded_image)
+                    
+                if img is not None:
+                    cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None)
+                    if st.button("🚀 선택 영역 분석 시작", key="btn_img", use_container_width=True, help="파란색 박스로 지정한 영역의 텍스트를 AI 선생님이 분석합니다."):
                     if not custom_title.strip():
                         st.error("지문 제목을 입력해주세요.")
                     elif check_passage_title_exists(st.session_state["user_id"], custom_title.strip()):
