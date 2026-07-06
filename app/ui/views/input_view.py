@@ -249,9 +249,9 @@ def render_input_view():
                 box = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords, return_type="box")
                 cropped_img = img.crop((box['left'], box['top'], box['left'] + box['width'], box['top'] + box['height']))
                 
-                res = render_preprocessor_ui(cropped_img, "image", max_page=max_page_for_ui)
+                res = render_input_options(max_page=max_page_for_ui)
                 if res[0] is not None:
-                    render_two_stage_ui(res, doc=doc if 'doc' in locals() else None, coords=box, max_page_for_ui=max_page_for_ui, source_type="image")
+                    render_two_stage_ui(res, doc=doc if 'doc' in locals() else None, coords=box, max_page_for_ui=max_page_for_ui, source_type="image", img_or_text=cropped_img, input_t="image")
 
     elif input_type == "📸 카메라 촬영":
         camera_image = st.camera_input("카메라로 교재 촬영")
@@ -260,23 +260,15 @@ def render_input_view():
             coords = get_default_coords(img)
             box = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords, return_type="box")
             cropped_img = img.crop((box['left'], box['top'], box['left'] + box['width'], box['top'] + box['height']))
-            res = render_preprocessor_ui(cropped_img, "image")
+            res = render_input_options(max_page=1)
             if res[0] is not None:
-                render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="cam")
+                render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="cam", img_or_text=cropped_img, input_t="image")
 
     elif input_type == "📝 텍스트 직접 입력":
         input_text = st.text_area("외국어 텍스트 입력", height=200)
         if input_text.strip():
-            res = render_preprocessor_ui(input_text, "text")
-            if res[0] is not None:
-                custom_title, doc_type, do_merge, _, raw_text = res
-                if st.button("🚀 텍스트 분석 시작", key="btn_txt", use_container_width=True):
-                    if not custom_title.strip():
-                        st.error("지문 제목을 입력해주세요.")
-                    else:
-                        with st.spinner("AI 분석 중..."):
-                            parsed = parser_agent.parse_from_text(input_text, doc_type=doc_type, extract_original_questions=st.session_state["extract_original"], student_level=st.session_state["student_level"], target_language=st.session_state["target_language"], translation_style=st.session_state["translation_style"], translation_tone=st.session_state["translation_tone"])
-                            handle_analysis(parsed, custom_title, doc_type, do_merge)
+            res = render_input_options(max_page=1)
+            render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="txt", img_or_text=input_text, input_t="text")
 
     elif input_type == "📂 공유된 파일 들여오기":
         uploaded_json = st.file_uploader("친구가 공유한 EduAI JSON 파일 업로드", type=["json"])
