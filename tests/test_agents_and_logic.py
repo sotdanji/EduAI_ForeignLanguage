@@ -167,10 +167,10 @@ class TestDashboardViewDataContract:
             "dashboard_view에서 p['p_type']을 사용하면 KeyError가 발생합니다! p['type'] 또는 p.get('type')을 사용하세요."
 
     def test_passage_list_uses_safe_get(self):
-        """KeyError 방지를 위해 .get() 사용 여부 확인"""
+        """KeyError 방지를 위한 .get() 사용 확인"""
         import inspect
-        from app.ui.views import dashboard_view
-        source = inspect.getsource(dashboard_view)
-        # p.get('title' 또는 p.get('type' 패턴이 있어야 함
+        from app.ui.views import library_view
+        source = inspect.getsource(library_view)
+        # p.get('title' 또는 p.get('type' 등이 있는지 확인
         assert "p.get(" in source, \
-            "dashboard_view에서 dict[key] 대신 dict.get(key, default)를 사용하여 KeyError를 방지해야 합니다"
+            "library_view는 dict[key] 대신 dict.get(key, default)를 사용하여 KeyError를 방지해야 합니다"

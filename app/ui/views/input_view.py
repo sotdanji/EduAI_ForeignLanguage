@@ -214,7 +214,7 @@ def render_input_view():
             
             col1, col2 = st.columns(2)
             with col1:
-                doc_type_val = doc_type
+                doc_type_val = st.session_state.get("extracted_doc_type", "reading")
                 if doc_type_val in ["test_paper", "handout"]:
                     button_label = "🚀 2단계: 저장 및 학습하기로 이동"
                 else:
@@ -279,8 +279,11 @@ def render_input_view():
                 box = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords, return_type="box")
                 cropped_img = img.crop((box['left'], box['top'], box['left'] + box['width'], box['top'] + box['height']))
                 
-                res = render_input_options(max_page=max_page_for_ui)
-                if res[0] is not None:
+                if "extracted_raw_text" not in st.session_state:
+                    res = render_input_options(max_page=max_page_for_ui)
+                else:
+                    res = (None, None, None, None)
+                if res[0] is not None or "extracted_raw_text" in st.session_state:
                     render_two_stage_ui(res, doc=doc if 'doc' in locals() else None, coords=box, max_page_for_ui=max_page_for_ui, source_type="image", img_or_text=cropped_img, input_t="image")
 
     elif input_type == "📸 카메라 촬영":
@@ -290,8 +293,11 @@ def render_input_view():
             coords = get_default_coords(img)
             box = st_cropper(img, realtime_update=True, box_color='#0000FF', aspect_ratio=None, default_coords=coords, return_type="box")
             cropped_img = img.crop((box['left'], box['top'], box['left'] + box['width'], box['top'] + box['height']))
-            res = render_input_options(max_page=1)
-            if res[0] is not None:
+            if "extracted_raw_text" not in st.session_state:
+                res = render_input_options(max_page=1)
+            else:
+                res = (None, None, None, None)
+            if res[0] is not None or "extracted_raw_text" in st.session_state:
                 render_two_stage_ui(res, doc=None, coords=None, max_page_for_ui=1, source_type="cam", img_or_text=cropped_img, input_t="image")
 
     elif input_type == "📝 텍스트 직접 입력":

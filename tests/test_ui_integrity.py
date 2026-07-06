@@ -66,26 +66,26 @@ class TestResultViewIntegrity:
 
 
 class TestLearnViewTransitions:
-    """learn_view.py 화면 전환 로직 검증"""
+    """input_view.py 화면 전환 로직 검증"""
 
     def test_rerun_after_text_parse(self):
         """텍스트 분석 후 st.rerun()이 호출되는지"""
-        from app.ui.views import learn_view
-        source = inspect.getsource(learn_view)
+        from app.ui.views import input_view
+        source = inspect.getsource(input_view)
         # parse_from_text 호출 이후 같은 블록에 st.rerun()이 있는지
         assert "st.rerun()" in source, \
-            "learn_view.py에 st.rerun()이 없으면 분석 완료 후 화면이 전환되지 않습니다!"
+            "input_view.py에 st.rerun()이 없으면 분석 완료 후 화면이 전환되지 않습니다!"
 
     def test_rerun_count_matches_parse_count(self):
-        """분석 버튼(btn_img, btn_cam, btn_txt) 수만큼 st.rerun()이 있어야 함"""
-        from app.ui.views import learn_view
-        source = inspect.getsource(learn_view)
+        """분석 경로 수만큼 st.rerun()이 있어야 함"""
+        from app.ui.views import input_view
+        source = inspect.getsource(input_view)
         
-        # 3개의 분석 경로 존재
+        # 3개의 분석 경로 존재 (또는 최소 1개 이상)
         parse_buttons = source.count("parse_from_")
         rerun_calls = source.count("st.rerun()")
         
-        # 최소 parse 경로 수만큼 rerun이 있어야 함 (+ 돌아가기 버튼의 rerun)
+        # 최소 parse 경로 수만큼 rerun이 있어야 함 (+ 다른 취소 버튼 등의 rerun)
         assert rerun_calls >= parse_buttons, \
             f"분석 경로 {parse_buttons}개에 대해 st.rerun()이 {rerun_calls}개뿐입니다. 화면 전환 누락 가능성!"
 
